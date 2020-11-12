@@ -6,6 +6,8 @@ import io.vertx.mutiny.ext.web.client.WebClient;
 import org.commonjava.util.gateway.services.Classifier;
 import org.commonjava.util.gateway.services.ProxyService;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -17,6 +19,7 @@ import javax.ws.rs.core.MediaType;
 @Path( "/api" )
 public class ProxyResource
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Inject
     private ProxyService proxyService;
@@ -32,7 +35,9 @@ public class ProxyResource
     public Uni<String> getData( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
     {
         WebClient client = classifier.getWebClient( path );
-        return proxyService.doRequest(client, "/api/" + path, request );
+
+        logger.debug( "Get resource: {}", path );
+        return proxyService.doRequest( client, "/api/" + path, request );
     }
 
 }

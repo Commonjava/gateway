@@ -7,16 +7,20 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class ProxyService
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     public Uni<String> doRequest( WebClient client, String path, HttpServerRequest request )
     {
         return client.get( path ).putHeaders( getHeaders( request ) ).send().onItem().transform( resp -> {
+            logger.debug("Get resp: {}", resp.statusMessage() );
             if ( resp.statusCode() == 200 )
             {
                 return resp.bodyAsString();
