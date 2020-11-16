@@ -18,7 +18,7 @@ public class Classifier
 
     private WebClient defaultClient;
 
-    private WebClient localClient;
+    private WebClient localClient; // for test PUT and POST
 
     @ConfigProperty( name = "default.host" )
     private String defaultHost;
@@ -35,14 +35,16 @@ public class Classifier
 
     public WebClient getWebClient( String path, HttpMethod method )
     {
-        if ( path.startsWith( "/api/promote" ) )
-        {
-            //return promoteClient; // set to different services
-        }
-        else if ( method == HttpMethod.POST || method == HttpMethod.PUT )
+        if ( method == HttpMethod.POST || method == HttpMethod.PUT )
         {
             return localClient;
         }
+/*
+        if ( path.startsWith( "/api/promote" ) )
+        {
+            return promoteClient; // set to different services
+        }
+*/
         return defaultClient;
     }
 

@@ -2,7 +2,9 @@ package org.commonjava.util.gateway.services;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.mutiny.core.buffer.Buffer;
+import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -21,7 +23,17 @@ public class ProxyService
     @Inject
     private Classifier classifier;
 
-    public Uni<byte[]> doRequestBytes( String path, HttpServerRequest request )
+    public void doHead( String path, HttpServerRequest request, HttpServerResponse response )
+    {
+        WebClient client = classifier.getWebClient( path, request.method() );
+
+        HttpResponse<Buffer> resp = client.head( path ).sendAndAwait();
+        logger.debug( "Head resp: {}, headers: {}", resp.statusCode() + " " + resp.statusMessage(), resp.headers() );
+        resp.headers().forEach( header -> response.putHeader( header.getKey(), header.getValue() ) );
+        response.setStatusCode( resp.statusCode() ).setStatusMessage( resp.statusMessage() ).end();
+    }
+
+    public Uni<byte[]> doGetBytes( String path, HttpServerRequest request )
     {
         WebClient client = classifier.getWebClient( path, request.method() );
 

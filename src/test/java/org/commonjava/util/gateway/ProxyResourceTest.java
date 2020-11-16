@@ -14,7 +14,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 public class ProxyResourceTest
 {
     @Test
-    public void testProxyAsyncEndpoint()
+    public void testProxyGet()
     {
         given().when()
                .get( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/maven-metadata.xml" )
@@ -24,7 +24,26 @@ public class ProxyResourceTest
     }
 
     @Test
-    public void testProxyBytesAsyncEndpoint()
+    public void testProxyHead200()
+    {
+        given().when()
+               .head( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/maven-metadata.xml" )
+               .then()
+               .statusCode( 200 )
+               .header( "Indy-Origin", is( "maven:hosted:local-deployments" ) );
+    }
+
+    @Test
+    public void testProxyHead404()
+    {
+        given().when()
+               .head( "/api/content/maven/hosted/local-deployments/no/such/path" )
+               .then()
+               .statusCode( 404 );
+    }
+
+    @Test
+    public void testProxyGetBytes()
     {
         given().when()
                .get( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/2.1-SNAPSHOT/partyline-2.1-20191014.214930-1.jar" )
@@ -34,14 +53,14 @@ public class ProxyResourceTest
     }
 
     @Test
-    public void testProxyPostEndpoint()
+    public void testProxyPost()
     {
         /* @formatter:off */
         String body = "{"
                         + "  \"key\": \"maven:hosted:local-1\","
                         + "  \"type\": \"hosted\","
                         + "  \"packageType\": \"maven\","
-                        + "  \"name\": \"local-test\""
+                        + "  \"name\": \"local-1\""
                         + "}";
         /* @formatter:on */
         given().when()
@@ -53,7 +72,7 @@ public class ProxyResourceTest
     }
 
     @Test
-    public void testProxyPutEndpoint()
+    public void testProxyPut()
     {
         given().when()
                .body( "This is a test " + new Date() )
