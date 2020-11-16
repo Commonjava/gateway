@@ -1,5 +1,6 @@
 package org.commonjava.util.gateway.services;
 
+import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -17,6 +18,8 @@ public class Classifier
 
     private WebClient defaultClient;
 
+    private WebClient localClient;
+
     @ConfigProperty( name = "default.host" )
     private String defaultHost;
 
@@ -25,13 +28,20 @@ public class Classifier
     {
         this.defaultClient = WebClient.create( vertx, new WebClientOptions().setDefaultHost( defaultHost )
                                                                             .setDefaultPort( 80 ) );
+
+        this.localClient = WebClient.create( vertx, new WebClientOptions().setDefaultHost( "localhost" )
+                                                                          .setDefaultPort( 8080 ) );
     }
 
-    public WebClient getWebClient( String path )
+    public WebClient getWebClient( String path, HttpMethod method )
     {
-        if ( path.startsWith( "promote" ) )
+        if ( path.startsWith( "/api/promote" ) )
         {
             //return promoteClient; // set to different services
+        }
+        else if ( method == HttpMethod.POST || method == HttpMethod.PUT )
+        {
+            return localClient;
         }
         return defaultClient;
     }
