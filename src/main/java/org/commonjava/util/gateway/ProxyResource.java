@@ -2,12 +2,15 @@ package org.commonjava.util.gateway;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import org.commonjava.util.gateway.services.ProxyService;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -20,19 +23,27 @@ public class ProxyResource
 {
     private static final String API_ROOT = "/api";
 
-    private final org.slf4j.Logger logger = LoggerFactory.getLogger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Inject
     private ProxyService proxyService;
 
-    // TODO: PUT / POST via bytes / stream
+    @HEAD
+    @Path( "/{path: (.*)}" )
+    public void head( @PathParam( "path" ) String path, final @Context HttpServerRequest request,
+                      final @Context HttpServerResponse response ) throws IOException
+    {
+        logger.debug( "Head resource: {}", path );
+        proxyService.doHead( API_ROOT + "/" + path, request, response );
+    }
 
     @GET
     @Path( "/{path: (.*)}" )
     public Uni<byte[]> getBytes( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
+                    throws IOException
     {
         logger.debug( "Get resource: {}", path );
-        return proxyService.doRequestBytes( API_ROOT + "/" + path, request );
+        return proxyService.doGetBytes( API_ROOT + "/" + path, request );
     }
 
     @POST
