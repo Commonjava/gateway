@@ -15,10 +15,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
-import java.io.IOException;
 import java.io.InputStream;
 
-@Path( "/api" )
+@Path( "/api/{path: (.*)}" )
 public class ProxyResource
 {
     private static final String API_ROOT = "/api";
@@ -29,39 +28,35 @@ public class ProxyResource
     private ProxyService proxyService;
 
     @HEAD
-    @Path( "/{path: (.*)}" )
     public void head( @PathParam( "path" ) String path, final @Context HttpServerRequest request,
-                      final @Context HttpServerResponse response ) throws IOException
+                      final @Context HttpServerResponse response ) throws Exception
     {
         logger.debug( "Head resource: {}", path );
         proxyService.doHead( API_ROOT + "/" + path, request, response );
     }
 
     @GET
-    @Path( "/{path: (.*)}" )
-    public Uni<byte[]> getBytes( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
-                    throws IOException
+    public Uni<byte[]> get( @PathParam( "path" ) String path, final @Context HttpServerRequest request,
+                            final @Context HttpServerResponse response ) throws Exception
     {
         logger.debug( "Get resource: {}", path );
-        return proxyService.doGetBytes( API_ROOT + "/" + path, request );
+        return proxyService.doGetBytes( API_ROOT + "/" + path, request, response );
     }
 
     @POST
-    @Path( "/{path: (.*)}" )
-    public Uni<byte[]> postBytes( @PathParam( "path" ) String path, InputStream is,
-                                  final @Context HttpServerRequest request ) throws IOException
+    public Uni<byte[]> post( @PathParam( "path" ) String path, InputStream is, final @Context HttpServerRequest request,
+                             final @Context HttpServerResponse response ) throws Exception
     {
-        logger.debug( "Post resource: {}, body: {}", path, is );
-        return proxyService.doPostBytes( API_ROOT + "/" + path, is, request );
+        logger.debug( "Post resource: {}", path );
+        return proxyService.doPostBytes( API_ROOT + "/" + path, is, request, response );
     }
 
     @PUT
-    @Path( "/{path: (.*)}" )
-    public Uni<byte[]> putBytes( @PathParam( "path" ) String path, InputStream is,
-                                 final @Context HttpServerRequest request ) throws IOException
+    public Uni<byte[]> put( @PathParam( "path" ) String path, InputStream is, final @Context HttpServerRequest request,
+                            final @Context HttpServerResponse response ) throws Exception
     {
         logger.debug( "Put resource: {}", path );
-        return proxyService.doPutBytes( API_ROOT + "/" + path, is, request );
+        return proxyService.doPutBytes( API_ROOT + "/" + path, is, request, response );
     }
 
 }

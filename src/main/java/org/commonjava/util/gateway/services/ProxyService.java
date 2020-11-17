@@ -5,7 +5,6 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
-import io.vertx.mutiny.ext.web.client.WebClient;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,56 +24,80 @@ public class ProxyService
 
     public void doHead( String path, HttpServerRequest request, HttpServerResponse response )
     {
-        WebClient client = classifier.getWebClient( path, request.method() );
+        classifier.classifyAnd( path, request, ( client ) -> {
+            HttpResponse<Buffer> resp = client.head( path ).sendAndAwait();
+            logger.debug( "Head resp: {}, headers: {}", statusLine( resp ), resp.headers() );
+            flushProxyResp( resp, response );
+            response.end();
+            return null;
+        } );
+    }
 
-        HttpResponse<Buffer> resp = client.head( path ).sendAndAwait();
-        logger.debug( "Head resp: {}, headers: {}", resp.statusCode() + " " + resp.statusMessage(), resp.headers() );
+    public Uni<byte[]> doGetBytes( String path, HttpServerRequest request, HttpServerResponse response )
+    {
+        return classifier.classifyAnd( path, request, ( client ) -> {
+            return client.get( path ).send().onItem().transform( resp -> {
+                logger.debug( "Get resp: {}, headers: {}", statusLine( resp ), resp.headers() );
+                flushProxyResp( resp, response );
+                if ( resp.body() != null )
+                {
+                    return resp.body().getBytes();
+                }
+                return null;
+            } );
+        } );
+    }
+
+    public Uni<byte[]> doPostBytes( String path, InputStream is, HttpServerRequest request,
+                                    HttpServerResponse response ) throws IOException
+    {
+        Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
+
+        return classifier.classifyAnd( path, request, ( client ) -> {
+            return client.post( path ).sendBuffer( buf ).onItem().transform( resp -> {
+                logger.debug( "Post resp: {}, headers: {}", statusLine( resp ), resp.headers() );
+                flushProxyResp( resp, response );
+                if ( resp.body() != null )
+                {
+                    return resp.body().getBytes();
+                }
+                return null;
+            } );
+        } );
+    }
+
+    public Uni<byte[]> doPutBytes( String path, InputStream is, HttpServerRequest request, HttpServerResponse response )
+                    throws IOException
+    {
+        Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
+
+        return classifier.classifyAnd( path, request, ( client ) -> {
+            return client.put( path ).sendBuffer( buf ).onItem().transform( resp -> {
+                logger.debug( "Put resp: {}, headers: {}", statusLine( resp ), resp.headers() );
+                flushProxyResp( resp, response );
+                if ( resp.body() != null )
+                {
+                    return resp.body().getBytes();
+                }
+                return null;
+            } );
+        } );
+    }
+
+    /**
+     * Read status and headers from proxy resp and set them to direct response.
+     * @param resp proxy resp
+     * @param response direct response
+     */
+    private void flushProxyResp( HttpResponse<Buffer> resp, HttpServerResponse response )
+    {
         resp.headers().forEach( header -> response.putHeader( header.getKey(), header.getValue() ) );
-        response.setStatusCode( resp.statusCode() ).setStatusMessage( resp.statusMessage() ).end();
+        response.setStatusCode( resp.statusCode() ).setStatusMessage( resp.statusMessage() );
     }
 
-    public Uni<byte[]> doGetBytes( String path, HttpServerRequest request )
+    private String statusLine( HttpResponse<Buffer> resp )
     {
-        WebClient client = classifier.getWebClient( path, request.method() );
-
-        return client.get( path )./*putHeaders( getHeaders( request ) ).*/send().onItem().transform( resp -> {
-            logger.debug( "Get resp: {}, headers: {}", resp.statusMessage(), resp.headers() );
-            if ( resp.body() != null )
-            {
-                return resp.body().getBytes();
-            }
-            return null;
-        } );
-    }
-
-    public Uni<byte[]> doPostBytes( String path, InputStream is, HttpServerRequest request ) throws IOException
-    {
-        WebClient client = classifier.getWebClient( path, request.method() );
-
-        Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
-        return client.post( path ).sendBuffer( buf ).onItem().transform( resp -> {
-            logger.debug( "Post resp: {}, headers: {}", resp.statusMessage(), resp.headers() );
-            if ( resp.body() != null )
-            {
-                return resp.body().getBytes();
-            }
-            return null;
-        } );
-    }
-
-    public Uni<byte[]> doPutBytes( String path, InputStream is, HttpServerRequest request ) throws IOException
-    {
-        WebClient client = classifier.getWebClient( path, request.method() );
-
-        Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
-        return client.put( path ).sendBuffer( buf ).onItem().transform( resp -> {
-            logger.debug( "Put resp: {}, headers: {}", resp.statusMessage(), resp.headers() );
-            if ( resp.body() != null )
-            {
-                return resp.body().getBytes();
-            }
-            return null;
-        } );
+        return resp.statusCode() + " " + resp.statusMessage();
     }
 
 /*
