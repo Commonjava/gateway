@@ -9,6 +9,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.anyOf;
 
 @QuarkusTest
 public class ProxyResourceTest
@@ -21,6 +22,25 @@ public class ProxyResourceTest
                .then()
                .statusCode( 200 )
                .body( containsString( "<artifactId>partyline</artifactId>" ) );
+    }
+
+    @Test
+    public void testProxyGet404()
+    {
+        given().when()
+               .get( "/api/content/maven/hosted/local-deployments/no/such/path" )
+               .then()
+               .statusCode( 404 );
+    }
+
+    @Test
+    public void testProxyGetBytes()
+    {
+        given().when()
+               .get( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/2.1-SNAPSHOT/partyline-2.1-20191014.214930-1.jar" )
+               .then()
+               .statusCode( 200 )
+               .body( is( notNullValue() ) );
     }
 
     @Test
@@ -44,31 +64,22 @@ public class ProxyResourceTest
     }
 
     @Test
-    public void testProxyGetBytes()
-    {
-        given().when()
-               .get( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/2.1-SNAPSHOT/partyline-2.1-20191014.214930-1.jar" )
-               .then()
-               .statusCode( 200 )
-               .body( is( notNullValue() ) );
-    }
-
-    @Test
     public void testProxyPost()
     {
         /* @formatter:off */
         String body = "{"
-                        + "  \"key\": \"maven:hosted:local-1\","
+                        + "  \"key\": \"maven:hosted:local-deployments\","
                         + "  \"type\": \"hosted\","
                         + "  \"packageType\": \"maven\","
-                        + "  \"name\": \"local-1\""
+                        + "  \"name\": \"local-deployments\","
+                        + "  \"allow_snapshots\": true"
                         + "}";
         /* @formatter:on */
         given().when()
                .body( body )
                .post( "/api/admin/stores/maven/hosted" )
                .then()
-               .statusCode( 200 )
+               .statusCode( anyOf( is( 200 ), is( 201 ) ) )
                .body( containsString( "create_time" ) );
     }
 
@@ -77,9 +88,9 @@ public class ProxyResourceTest
     {
         given().when()
                .body( "This is a test " + new Date() )
-               .put( "/api/content/maven/hosted/local-1/my/test/test-1.txt" )
+               .put( "/api/content/maven/hosted/local-deployments/my/test/test-1.txt" )
                .then()
-               .statusCode( 204 );
+               .statusCode( anyOf( is( 201 ), is( 204 ) ) );
     }
 
 }

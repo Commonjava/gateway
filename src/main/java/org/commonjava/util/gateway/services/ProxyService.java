@@ -2,7 +2,6 @@ package org.commonjava.util.gateway.services;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.apache.commons.io.IOUtils;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,82 +22,57 @@ public class ProxyService
     @Inject
     private Classifier classifier;
 
-    public void doHead( String path, HttpServerRequest request, HttpServerResponse response )
+    public Uni<Response> doHead( String path, HttpServerRequest request )
     {
-        classifier.classifyAnd( path, request, ( client ) -> {
-            HttpResponse<Buffer> resp = client.head( path ).sendAndAwait();
-            logger.debug( "Head resp: {}, headers: {}", statusLine( resp ), resp.headers() );
-            flushProxyResp( resp, response );
-            response.end();
-            return null;
-        } );
+        return classifier.classifyAnd( path, request, client -> client.head( path )
+                                                                      .send()
+                                                                      .onItem()
+                                                                      .transform( this::convertProxyResp ) );
     }
 
-    public Uni<byte[]> doGetBytes( String path, HttpServerRequest request, HttpServerResponse response )
+    public Uni<Response> doGet( String path, HttpServerRequest request )
     {
-        return classifier.classifyAnd( path, request, ( client ) -> {
-            return client.get( path ).send().onItem().transform( resp -> {
-                logger.debug( "Get resp: {}, headers: {}", statusLine( resp ), resp.headers() );
-                flushProxyResp( resp, response );
-                if ( resp.body() != null )
-                {
-                    return resp.body().getBytes();
-                }
-                return null;
-            } );
-        } );
+        return classifier.classifyAnd( path, request, client -> client.get( path )
+                                                                      .send()
+                                                                      .onItem()
+                                                                      .transform( this::convertProxyResp ) );
     }
 
-    public Uni<byte[]> doPostBytes( String path, InputStream is, HttpServerRequest request,
-                                    HttpServerResponse response ) throws IOException
+    public Uni<Response> doPost( String path, InputStream is, HttpServerRequest request ) throws IOException
     {
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
-        return classifier.classifyAnd( path, request, ( client ) -> {
-            return client.post( path ).sendBuffer( buf ).onItem().transform( resp -> {
-                logger.debug( "Post resp: {}, headers: {}", statusLine( resp ), resp.headers() );
-                flushProxyResp( resp, response );
-                if ( resp.body() != null )
-                {
-                    return resp.body().getBytes();
-                }
-                return null;
-            } );
-        } );
+        return classifier.classifyAnd( path, request, client -> client.post( path )
+                                                                      .sendBuffer( buf )
+                                                                      .onItem()
+                                                                      .transform( this::convertProxyResp ) );
     }
 
-    public Uni<byte[]> doPutBytes( String path, InputStream is, HttpServerRequest request, HttpServerResponse response )
-                    throws IOException
+    public Uni<Response> doPut( String path, InputStream is, HttpServerRequest request ) throws IOException
     {
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
-        return classifier.classifyAnd( path, request, ( client ) -> {
-            return client.put( path ).sendBuffer( buf ).onItem().transform( resp -> {
-                logger.debug( "Put resp: {}, headers: {}", statusLine( resp ), resp.headers() );
-                flushProxyResp( resp, response );
-                if ( resp.body() != null )
-                {
-                    return resp.body().getBytes();
-                }
-                return null;
-            } );
-        } );
+        return classifier.classifyAnd( path, request, client -> client.put( path )
+                                                                      .sendBuffer( buf )
+                                                                      .onItem()
+                                                                      .transform( this::convertProxyResp ) );
     }
 
     /**
      * Read status and headers from proxy resp and set them to direct response.
      * @param resp proxy resp
-     * @param response direct response
      */
-    private void flushProxyResp( HttpResponse<Buffer> resp, HttpServerResponse response )
+    private Response convertProxyResp( HttpResponse<Buffer> resp )
     {
-        resp.headers().forEach( header -> response.putHeader( header.getKey(), header.getValue() ) );
-        response.setStatusCode( resp.statusCode() ).setStatusMessage( resp.statusMessage() );
-    }
-
-    private String statusLine( HttpResponse<Buffer> resp )
-    {
-        return resp.statusCode() + " " + resp.statusMessage();
+        logger.debug( "Proxy resp: {} {}, headers: {}", resp.statusCode(), resp.statusMessage(), resp.headers() );
+        Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
+        resp.headers().forEach( header -> builder.header( header.getKey(), header.getValue() ) );
+        if ( resp.body() != null )
+        {
+            byte[] bytes = resp.body().getBytes();
+            builder.entity( bytes );
+        }
+        return builder.build();
     }
 
 /*
