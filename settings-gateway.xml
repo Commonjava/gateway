@@ -6,7 +6,7 @@
     <mirrors>
         <mirror>
             <mirrorOf>*</mirrorOf>
-            <url>http://localhost:8080/api/content/maven/group/public</url>
+            <url>http://localhost:8081/api/content/maven/group/public</url>
         </mirror>
     </mirrors>
 
@@ -15,10 +15,10 @@
             <id>internal-deploy</id>
             <properties>
                 <altReleaseDeploymentRepository>
-                    indy::default::http://localhost:8080/api/content/maven/hosted/local-releases
+                    indy::default::http://localhost:8081/api/content/maven/hosted/local-releases
                 </altReleaseDeploymentRepository>
                 <altSnapshotDeploymentRepository>
-                    indy::default::http://localhost:8080/api/content/maven/hosted/local-deployments
+                    indy::default::http://localhost:8081/api/content/maven/hosted/local-deployments
                 </altSnapshotDeploymentRepository>
             </properties>
         </profile>
