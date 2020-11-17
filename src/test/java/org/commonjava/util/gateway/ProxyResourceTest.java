@@ -24,12 +24,13 @@ public class ProxyResourceTest
     }
 
     @Test
-    public void testProxyHead200()
+    public void testProxyHead()
     {
         given().when()
                .head( "/api/content/maven/hosted/local-deployments/org/commonjava/util/partyline/maven-metadata.xml" )
                .then()
                .statusCode( 200 )
+               .header( "Indy-Cur-API-Version", is( "1" ) )
                .header( "Indy-Origin", is( "maven:hosted:local-deployments" ) );
     }
 

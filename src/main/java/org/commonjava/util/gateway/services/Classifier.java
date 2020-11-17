@@ -1,6 +1,7 @@
 package org.commonjava.util.gateway.services;
 
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
@@ -9,6 +10,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.function.Function;
 
 @ApplicationScoped
 public class Classifier
@@ -20,7 +22,7 @@ public class Classifier
 
     private WebClient localClient; // for test PUT and POST
 
-    @ConfigProperty( name = "default.host" )
+    @ConfigProperty( name = "proxy.host.default" )
     private String defaultHost;
 
     @PostConstruct
@@ -33,8 +35,14 @@ public class Classifier
                                                                           .setDefaultPort( 8080 ) );
     }
 
-    public WebClient getWebClient( String path, HttpMethod method )
+    public <R> R classifyAnd( String path, HttpServerRequest request, Function<WebClient, R> action )
     {
+        return action.apply( getWebClient( path, request ) );
+    }
+
+    private WebClient getWebClient( String path, HttpServerRequest request )
+    {
+        HttpMethod method = request.method();
         if ( method == HttpMethod.POST || method == HttpMethod.PUT )
         {
             return localClient;
