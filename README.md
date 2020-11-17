@@ -22,8 +22,9 @@ some maven build, e.g,
 The settings-gateway.xml is at the project root directory for test
 purpose.
 
-You can also deploy artifacts to some remote repository, e.g,
+You can also deploy artifacts to a repository, e.g,
 
 ```$ mvn deploy -s <path-to>/settings-gateway.xml```
 
-By default they are put on indy-infra's maven/hosted/local-deployments.
+To test it, you need to **start a local Indy** and the artifacts are put on
+**maven/hosted/local-deployments**.
