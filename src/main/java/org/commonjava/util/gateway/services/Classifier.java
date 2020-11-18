@@ -5,56 +5,61 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.commonjava.util.gateway.config.ProxyServiceConfiguration;
+import org.commonjava.util.gateway.exception.ServiceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @ApplicationScoped
 public class Classifier
 {
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
+
     @Inject
     Vertx vertx;
 
-    private WebClient defaultClient;
+    @Inject
+    private ProxyServiceConfiguration serviceConfiguration;
 
-    private WebClient localClient; // for test PUT and POST
+    private Map<ProxyServiceConfiguration.ServiceConfig, WebClient> clientMap = new ConcurrentHashMap<>();
 
-    @ConfigProperty( name = "proxy.host.default" )
-    private String defaultHost;
-
-    @PostConstruct
-    void initialize()
-    {
-        this.defaultClient = WebClient.create( vertx, new WebClientOptions().setDefaultHost( defaultHost )
-                                                                            .setDefaultPort( 80 ) );
-
-        this.localClient = WebClient.create( vertx, new WebClientOptions().setDefaultHost( "localhost" )
-                                                                          .setDefaultPort( 8080 ) );
-    }
-
-    public <R> R classifyAnd( String path, HttpServerRequest request, Function<WebClient, R> action )
+    public <R> R classifyAnd( String path, HttpServerRequest request, Function<WebClient, R> action ) throws Exception
     {
         return action.apply( getWebClient( path, request ) );
     }
 
-    private WebClient getWebClient( String path, HttpServerRequest request )
+    private WebClient getWebClient( String path, HttpServerRequest request ) throws Exception
     {
         HttpMethod method = request.method();
-        if ( method == HttpMethod.POST || method == HttpMethod.PUT )
-        {
-            return localClient;
-        }
-/*
-        if ( path.startsWith( "/api/promote" ) )
-        {
-            return promoteClient; // set to different services
-        }
-*/
-        return defaultClient;
-    }
 
+        ProxyServiceConfiguration.ServiceConfig service = null;
+        for ( ProxyServiceConfiguration.ServiceConfig sv : serviceConfiguration.services )
+        {
+            if ( path.matches( sv.pathPattern ) && sv.methods.contains( method.name() ) )
+            {
+                service = sv;
+                break;
+            }
+        }
+
+        if ( service != null )
+        {
+            return clientMap.computeIfAbsent( service,
+                                              k -> WebClient.create( vertx,
+                                                       new WebClientOptions()
+                                                             .setDefaultHost( k.host )
+                                                                .setDefaultPort( k.port ) ) );
+        }
+        else
+        {
+            throw new ServiceNotFoundException( "Service not found, path: " + path + ", method: " + method );
+        }
+    }
 }
 
