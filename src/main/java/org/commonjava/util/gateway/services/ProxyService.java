@@ -22,7 +22,7 @@ public class ProxyService
     @Inject
     private Classifier classifier;
 
-    public Uni<Response> doHead( String path, HttpServerRequest request )
+    public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
     {
         return classifier.classifyAnd( path, request, client -> client.head( path )
                                                                       .send()
@@ -30,7 +30,7 @@ public class ProxyService
                                                                       .transform( this::convertProxyResp ) );
     }
 
-    public Uni<Response> doGet( String path, HttpServerRequest request )
+    public Uni<Response> doGet( String path, HttpServerRequest request ) throws Exception
     {
         return classifier.classifyAnd( path, request, client -> client.get( path )
                                                                       .send()
@@ -38,7 +38,7 @@ public class ProxyService
                                                                       .transform( this::convertProxyResp ) );
     }
 
-    public Uni<Response> doPost( String path, InputStream is, HttpServerRequest request ) throws IOException
+    public Uni<Response> doPost( String path, InputStream is, HttpServerRequest request ) throws Exception
     {
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
@@ -48,7 +48,7 @@ public class ProxyService
                                                                       .transform( this::convertProxyResp ) );
     }
 
-    public Uni<Response> doPut( String path, InputStream is, HttpServerRequest request ) throws IOException
+    public Uni<Response> doPut( String path, InputStream is, HttpServerRequest request ) throws Exception
     {
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
