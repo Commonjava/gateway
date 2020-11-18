@@ -11,6 +11,22 @@ go to promotion.
 1. jdk11
 2. mvn 3.6.2+
 
+## Configure proxy services
+
+Gateway uses a config to find proxy services. The configuration is in
+'application.yaml', e.g.,
+
+```
+proxy:
+    services:
+        - "host: localhost, port: 8080, methods: POST/PUT, path-pattern: .+"
+        - "host: indy-infra-nos-automation.cloud.paas.psi.redhat.com, port: 80, methods: GET/HEAD, path-pattern: .+"
+```
+
+When receiving a HTTP request, it matches the **path and method**
+against the services and proxy the request to it. If no not found,
+it throws a **ServiceNotFoundException**.
+
 ## Try it!
 ```$ mvn compile quarkus:dev```
 
