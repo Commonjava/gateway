@@ -11,10 +11,7 @@ pipeline {
                 expression { env.CHANGE_ID != null } // Pull request
             }
             steps {
-                sh 'ls -l /home/jenkins'
-                sh 'ls -l /home/jenkins/apache-maven-3.6.3'
-                sh 'ls -l /home/jenkins/apache-maven-3.6.3/bin'
-                sh '/home/jenkins/apache-maven-3.6.3/bin/mvn -B -V clean verify -Prun-its -Pci'
+                sh '/opt/apache-maven-3.6.3/bin/mvn -B -V clean verify -Prun-its -Pci'
             }
         }
         stage('Deploy') {
