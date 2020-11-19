@@ -11,7 +11,7 @@ pipeline {
                 expression { env.CHANGE_ID != null } // Pull request
             }
             steps {
-                sh '/opt/apache-maven-3.6.3/bin/mvn -B -V clean verify -DskipTests -Prun-its -Pci'
+                sh '${M2_HOME}/bin/mvn -B -V clean verify -DskipTests -Prun-its -Pci'
             }
         }
         stage('Deploy') {
