@@ -18,7 +18,7 @@ pipeline {
             when { branch 'master' }
             steps {
                 echo "Deploy"
-                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e'
+                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e -DskipTests'
             }
         }
     }
