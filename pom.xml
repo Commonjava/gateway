@@ -25,6 +25,7 @@
     </scm>
 
     <properties>
+        <bomVersion>25</bomVersion>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.source>11</maven.compiler.source>
@@ -44,6 +45,13 @@
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
                 <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.commonjava.boms</groupId>
+                <artifactId>web-commons-bom</artifactId>
+                <version>${bomVersion}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
