@@ -3,14 +3,25 @@ quarkus:
     http:
         port: 8081
 
-    # Logging
+    # Logging (disable console on prod)
     log:
         level: INFO
         category:
             "org.commonjava.util.gateway":
                 level: DEBUG
+        console:
+            level: DEBUG
+            enable: true
+        file:
+            enable: true
+            path: "log/gateway.log"
+            level: DEBUG
+            format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
+            rotation:
+                max-backup-index: 5
+                max-file-size: 10M
 
-# Proxy services
+# Proxy services (test only, override this on prod)
 proxy:
     services:
         - "host: localhost, port: 8080, methods: POST/PUT, path-pattern: .+"
