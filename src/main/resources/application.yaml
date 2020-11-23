@@ -3,6 +3,9 @@ quarkus:
     http:
         port: 8081
 
+    package:
+        uber-jar: true
+
     # Logging (disable console on prod)
     log:
         level: INFO
@@ -20,6 +23,9 @@ quarkus:
             rotation:
                 max-backup-index: 5
                 max-file-size: 10M
+
+    swagger-ui:
+        always-include: true
 
 # Proxy services (test only, override this on prod)
 proxy:
