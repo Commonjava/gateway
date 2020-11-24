@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
 import javax.ws.rs.POST;
@@ -57,6 +58,14 @@ public class ProxyResource
     {
         logger.debug( "Put resource: {}", path );
         return proxyService.doPut( API_ROOT + "/" + path, is, request );
+    }
+
+    @DELETE
+    public Uni<Response> delete( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
+                    throws Exception
+    {
+        logger.debug( "Delete resource: {}", path );
+        return proxyService.doDelete( API_ROOT + "/" + path, request );
     }
 
 }

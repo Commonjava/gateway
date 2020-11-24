@@ -58,6 +58,14 @@ public class ProxyService
                                                                       .transform( this::convertProxyResp ) );
     }
 
+    public Uni<Response> doDelete( String path, HttpServerRequest request ) throws Exception
+    {
+        return classifier.classifyAnd( path, request, client -> client.delete( path )
+                                                                      .send()
+                                                                      .onItem()
+                                                                      .transform( this::convertProxyResp ) );
+    }
+
     /**
      * Read status and headers from proxy resp and set them to direct response.
      * @param resp proxy resp
