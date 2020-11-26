@@ -36,6 +36,7 @@
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <quarkus.platform.version>1.9.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+        <o11yphantVersion>1.2</o11yphantVersion>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +91,18 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- o11 metrics -->
+        <dependency>
+            <groupId>org.commonjava.util</groupId>
+            <artifactId>o11yphant-metrics-api</artifactId>
+            <version>${o11yphantVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.commonjava.util</groupId>
+            <artifactId>o11yphant-metrics-core</artifactId>
+            <version>${o11yphantVersion}</version>
         </dependency>
     </dependencies>
 

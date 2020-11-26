@@ -13,8 +13,12 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.util.UUID;
 
 import static javax.ws.rs.core.HttpHeaders.HOST;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.commonjava.o11yphant.metrics.RequestContextHelper.EXTERNAL_TRACE_ID;
+import static org.commonjava.o11yphant.metrics.RequestContextHelper.TRACE_ID;
 
 @ApplicationScoped
 public class ProxyService
@@ -93,9 +97,21 @@ public class ProxyService
     private io.vertx.mutiny.core.MultiMap getHeaders( HttpServerRequest request )
     {
         MultiMap headers = request.headers();
-        io.vertx.mutiny.core.MultiMap ret = io.vertx.mutiny.core.MultiMap.newInstance( headers ).remove( HOST );
+        io.vertx.mutiny.core.MultiMap ret = io.vertx.mutiny.core.MultiMap.newInstance( headers )
+                                                                         .remove( HOST )
+                                                                         .add( TRACE_ID, getTraceId( headers ) );
         logger.debug( "Req headers: {}", ret );
         return ret;
+    }
+
+    /**
+     * Get 'trace-id'. If client specify an 'external-id', use it. Otherwise, use an generated uuid. Services under the hook
+     * should use the hereby created 'trace-id', rather than to generate their own.
+     */
+    private String getTraceId( MultiMap headers )
+    {
+        String externalID = headers.get( EXTERNAL_TRACE_ID );
+        return isNotBlank( externalID ) ? externalID : UUID.randomUUID().toString();
     }
 
 }
