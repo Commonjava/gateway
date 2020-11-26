@@ -17,8 +17,8 @@ import java.util.UUID;
 
 import static javax.ws.rs.core.HttpHeaders.HOST;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.commonjava.o11yphant.metrics.RequestContextHelper.EXTERNAL_TRACE_ID;
-import static org.commonjava.o11yphant.metrics.RequestContextHelper.TRACE_ID;
+import static org.commonjava.util.gateway.GatewayConstants.EXTERNAL_ID;
+import static org.commonjava.util.gateway.GatewayConstants.TRACE_ID;
 
 @ApplicationScoped
 public class ProxyService
@@ -110,7 +110,7 @@ public class ProxyService
      */
     private String getTraceId( MultiMap headers )
     {
-        String externalID = headers.get( EXTERNAL_TRACE_ID );
+        String externalID = headers.get( EXTERNAL_ID );
         return isNotBlank( externalID ) ? externalID : UUID.randomUUID().toString();
     }
 
