@@ -83,7 +83,7 @@ public class ProxyService
      */
     private Response convertProxyResp( HttpResponse<Buffer> resp )
     {
-        logger.debug( "Proxy resp: {} {}, resp headers: {}", resp.statusCode(), resp.statusMessage(), resp.headers() );
+        logger.debug( "Proxy resp: {} {}, resp headers:\n{}", resp.statusCode(), resp.statusMessage(), resp.headers() );
         Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
         resp.headers().forEach( header -> builder.header( header.getKey(), header.getValue() ) );
         if ( resp.body() != null )
@@ -100,7 +100,7 @@ public class ProxyService
         io.vertx.mutiny.core.MultiMap ret = io.vertx.mutiny.core.MultiMap.newInstance( headers )
                                                                          .remove( HOST )
                                                                          .add( TRACE_ID, getTraceId( headers ) );
-        logger.debug( "Req headers: {}", ret );
+        logger.debug( "Req headers:\n{}", ret );
         return ret;
     }
 
