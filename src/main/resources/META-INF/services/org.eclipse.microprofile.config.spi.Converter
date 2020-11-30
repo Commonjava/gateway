@@ -1,1 +1,2 @@
 org.commonjava.util.gateway.config.ServiceConfigConverter
+org.commonjava.util.gateway.config.RetryConverter

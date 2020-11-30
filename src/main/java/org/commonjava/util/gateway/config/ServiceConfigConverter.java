@@ -4,16 +4,27 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import java.util.Arrays;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 public class ServiceConfigConverter
-                implements Converter<ProxyServiceConfiguration.ServiceConfig>
+                implements Converter<ProxyConfiguration.ServiceConfig>
 {
     @Override
-    public ProxyServiceConfiguration.ServiceConfig convert( String service )
+    public ProxyConfiguration.ServiceConfig convert( String service )
     {
-        ProxyServiceConfiguration.ServiceConfig ret = new ProxyServiceConfiguration.ServiceConfig();
-        for ( String s : service.split( "," ) )
+        if ( isBlank( service ) )
+        {
+            return null;
+        }
+
+        ProxyConfiguration.ServiceConfig ret = new ProxyConfiguration.ServiceConfig();
+        for ( String s : service.split( ",|\\n" ) )
         {
             int index = s.indexOf( ":" );
+            if ( index < 0 )
+            {
+                continue;
+            }
             String k = s.substring( 0, index ).trim();
             String v = s.substring( index + 1 ).trim();
             switch ( k )
