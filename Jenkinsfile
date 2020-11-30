@@ -19,7 +19,7 @@ pipeline {
                 expression { env.CHANGE_ID != null } // Pull request
             }
             steps {
-                sh '${M2_HOME}/bin/mvn -B -V clean verify -DskipTests -Prun-its -Pci'
+                sh '${M2_HOME}/bin/mvn -B -V clean verify -Prun-its -Pci'
             }
         }
         stage('Load OCP Mappings') {
@@ -62,7 +62,7 @@ pipeline {
             when { branch 'master' }
             steps {
                 echo "Deploy"
-                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e -DskipTests'
+                sh '${M2_HOME}/bin/mvn help:effective-settings -B -V clean deploy -e'
             }
         }
         stage('Archive') {
