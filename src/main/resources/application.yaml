@@ -1,7 +1,7 @@
 # Quarkus will choose application.yaml over application.properties.
 quarkus:
     http:
-        port: 8081
+        port: 8080
 
     package:
         uber-jar: true
@@ -28,7 +28,19 @@ quarkus:
         always-include: true
 
 # Proxy services (test only, override this on prod)
-#proxy:
-#    services:
-#        - "host: localhost, port: 8080, methods: POST/PUT, path-pattern: .+"
-#        - "host: indy-infra-nos-automation.cloud.paas.psi.redhat.com, port: 80, methods: GET/HEAD, path-pattern: .+"
+proxy:
+#    retry: |+
+#        count: 3
+#        interval: 3000
+
+    services:
+        - |+
+          host: localhost,
+          port: 8080,
+          methods: POST/PUT,
+          path-pattern: .+
+        - |+
+          host: indy-infra-nos-automation.cloud.paas.psi.redhat.com,
+          port: 80,
+          methods: GET/HEAD,
+          path-pattern: .+
