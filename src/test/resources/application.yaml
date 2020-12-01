@@ -2,6 +2,8 @@
 quarkus:
     http:
         port: 8080
+        limits:
+            max-body-size: 500M
 
     package:
         uber-jar: true
@@ -16,7 +18,7 @@ quarkus:
             level: DEBUG
             enable: true
         file:
-            enable: true
+            enable: false
             path: "log/gateway.log"
             level: DEBUG
             format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"

@@ -40,6 +40,8 @@ public class TestResources
 
     public static final String PUT_PATH = "/api/content/maven/hosted/local-deployments/my/test/test-1.txt";
 
+    public static final String LARGE_JAR_PATH = "/api/content/maven/hosted/local-deployments/my/test/large.jar";
+
     public static final String POST_PATH = "/api/admin/stores/maven/hosted";
 
     private WireMockServer wireMockServer;
@@ -65,6 +67,10 @@ public class TestResources
         wireMockServer.stubFor( put( PUT_PATH ).willReturn( aResponse().withStatus( 201 ) ) );
 
         wireMockServer.stubFor( post( POST_PATH ).willReturn( aResponse().withTransformers( TRANSFORMER_NAME ) ));
+
+        wireMockServer.stubFor( put( LARGE_JAR_PATH ).willReturn( aResponse().withStatus( 201 ) ) );
+
+        wireMockServer.stubFor( post( LARGE_JAR_PATH ).willReturn( aResponse().withStatus( 201 ) ));
 
         return Collections.EMPTY_MAP;
     }
