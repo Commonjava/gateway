@@ -2,42 +2,29 @@ package org.commonjava.util.gateway.config;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 public class RetryConverter
+                extends AbstractConverter<ProxyConfiguration.Retry>
                 implements Converter<ProxyConfiguration.Retry>
 {
+    @Override
+    protected ProxyConfiguration.Retry newInstance()
+    {
+        return new ProxyConfiguration.Retry();
+    }
 
     @Override
-    public ProxyConfiguration.Retry convert( String config )
+    protected void onEntry( String k, String v, ProxyConfiguration.Retry ret )
     {
-        if ( isBlank( config ) )
+        switch ( k )
         {
-            return null;
+            case "count":
+                ret.count = Integer.parseInt( v );
+                break;
+            case "interval":
+                ret.interval = Long.parseLong( v );
+                break;
+            default:
+                break;
         }
-
-        ProxyConfiguration.Retry ret = new ProxyConfiguration.Retry();
-        for ( String s : config.split( ",|\\n" ) )
-        {
-            int index = s.indexOf( ":" );
-            if ( index < 0 )
-            {
-                continue;
-            }
-            String k = s.substring( 0, index ).trim();
-            String v = s.substring( index + 1 ).trim();
-            switch ( k )
-            {
-                case "count":
-                    ret.count = Integer.parseInt( v );
-                    break;
-                case "interval":
-                    ret.interval = Long.parseLong( v );
-                    break;
-                default:
-                    break;
-            }
-        }
-        return ret;
     }
 }
