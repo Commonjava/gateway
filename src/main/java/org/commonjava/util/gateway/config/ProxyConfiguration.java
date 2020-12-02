@@ -1,22 +1,149 @@
 package org.commonjava.util.gateway.config;
 
-import io.quarkus.arc.config.ConfigProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.Startup;
+import io.vertx.core.json.JsonObject;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 
-@ConfigProperties( prefix = "proxy" )
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+@Startup
+@ApplicationScoped
 public class ProxyConfiguration
 {
-    public Optional<Retry> retry;
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    public List<ServiceConfig> services;
+    private Retry retry;
+
+    private Set<ServiceConfig> services;
+
+    public Set<ServiceConfig> getServices()
+    {
+        return services;
+    }
+
+    public Retry getRetry()
+    {
+        return retry;
+    }
 
     @Override
     public String toString()
     {
         return "ProxyConfiguration{" + "retry=" + retry + ", services=" + services + '}';
+    }
+
+    @PostConstruct
+    void init()
+    {
+        load( true );
+        logger.info( "Proxy config, {}", this );
+    }
+
+    private static final String PROXY_YAML = "proxy.yaml";
+
+    /**
+     * Load proxy config from classpath resource (if init is true) and '${user.dir}/config/proxy.yaml'.
+     */
+    public void load( boolean init )
+    {
+        if ( init )
+        {
+            InputStream res = this.getClass().getClassLoader().getResourceAsStream( PROXY_YAML );
+            if ( res != null )
+            {
+                logger.info( "Load from classpath, {}", PROXY_YAML );
+                doLoad( res );
+            }
+        }
+
+        loadFromFile();
+    }
+
+    private void loadFromFile()
+    {
+        String userDir = System.getProperty( "user.dir" ); // where the JVM was invoked
+        File file = new File( userDir, "config/" + PROXY_YAML );
+        if ( file.exists() )
+        {
+            logger.info( "Load from file, {}", file );
+            try
+            {
+                doLoad( new FileInputStream( file ) );
+            }
+            catch ( FileNotFoundException e )
+            {
+                logger.error( "Load failed", e );
+                return;
+            }
+        }
+        else
+        {
+            logger.info( "Skip load, NO_SUCH_FILE, {}", file );
+        }
+    }
+
+    private transient String md5Hex; // used to check whether the custom proxy.yaml has changed
+
+    private void doLoad( InputStream res )
+    {
+        try
+        {
+            String str = IOUtils.toString( res, UTF_8 );
+            String md5 = DigestUtils.md5Hex( str ).toUpperCase();
+            if ( md5.equals( md5Hex ) )
+            {
+                logger.debug( "Skip, NO_CHANGE" );
+                return;
+            }
+
+            md5Hex = md5;
+            Yaml yaml = new Yaml();
+            Map<String, Object> obj = yaml.load( str );
+            Map<String, Object> proxy = (Map) obj.get( "proxy" );
+
+            JsonObject jsonObject = JsonObject.mapFrom( proxy );
+            ProxyConfiguration parsed = jsonObject.mapTo( this.getClass() );
+            logger.info( "Loaded: {}", parsed );
+
+            if ( this.retry == null )
+            {
+                this.retry = parsed.retry;
+            }
+            else if ( parsed.retry != null )
+            {
+                this.retry.copyFrom( parsed.retry );
+            }
+
+            if ( this.services == null )
+            {
+                this.services = parsed.services;
+            }
+            else if ( parsed.services != null )
+            {
+                this.services.addAll( parsed.services );
+            }
+        }
+        catch ( IOException e )
+        {
+            logger.error( "Load failed", e );
+        }
     }
 
     public static class ServiceConfig
@@ -27,6 +154,7 @@ public class ProxyConfiguration
 
         public List<String> methods;
 
+        @JsonProperty( "path-pattern" )
         public String pathPattern;
 
         @Override
@@ -64,6 +192,12 @@ public class ProxyConfiguration
         public String toString()
         {
             return "Retry{" + "count=" + count + ", interval=" + interval + '}';
+        }
+
+        public void copyFrom( Retry retry )
+        {
+            count = retry.count;
+            interval = retry.interval;
         }
     }
 }

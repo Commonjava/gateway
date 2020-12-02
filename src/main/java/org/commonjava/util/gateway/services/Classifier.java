@@ -1,6 +1,5 @@
 package org.commonjava.util.gateway.services;
 
-import io.quarkus.runtime.Startup;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -11,14 +10,12 @@ import org.commonjava.util.gateway.exception.ServiceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-@Startup
 @ApplicationScoped
 public class Classifier
 {
@@ -29,12 +26,6 @@ public class Classifier
 
     @Inject
     private ProxyConfiguration serviceConfiguration;
-
-    @PostConstruct
-    void init()
-    {
-        logger.info( "Proxy config, {}", serviceConfiguration );
-    }
 
     private Map<ProxyConfiguration.ServiceConfig, WebClient> clientMap = new ConcurrentHashMap<>();
 
@@ -48,7 +39,7 @@ public class Classifier
         HttpMethod method = request.method();
 
         ProxyConfiguration.ServiceConfig service = null;
-        for ( ProxyConfiguration.ServiceConfig sv : serviceConfiguration.services )
+        for ( ProxyConfiguration.ServiceConfig sv : serviceConfiguration.getServices() )
         {
             if ( path.matches( sv.pathPattern ) && ( sv.methods == null || sv.methods.contains( method.name() ) ) )
             {
@@ -71,4 +62,3 @@ public class Classifier
         }
     }
 }
-

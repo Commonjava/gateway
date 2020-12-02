@@ -28,21 +28,3 @@ quarkus:
 
     swagger-ui:
         always-include: true
-
-# Proxy services (test only, override this on prod)
-proxy:
-#    retry: |+
-#        count: 3
-#        interval: 3000
-
-    services:
-        - |+
-          host: localhost,
-          port: 8080,
-          methods: POST/PUT,
-          path-pattern: .+
-        - |+
-          host: indy-infra-nos-automation.cloud.paas.psi.redhat.com,
-          port: 80,
-          methods: GET/HEAD,
-          path-pattern: .+
