@@ -1,0 +1,8 @@
+proxy:
+  retry:
+    count: 3
+    interval: 3000
+#  services:
+#    - host: indy-infra.nos-automation.svc.cluster.local
+#      port: 80
+#      path-pattern: .+

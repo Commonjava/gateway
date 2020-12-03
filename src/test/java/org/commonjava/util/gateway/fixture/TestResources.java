@@ -30,6 +30,8 @@ public class TestResources
 
     public static final String NON_EXIST_PATH = "/api/content/maven/hosted/local-deployments/no/such/path";
 
+    public static final String SERVICE_NOT_FOUND_PATH = "/api/none/something";
+
     public static final String JAR_PATH = "/api/content/maven/group/public/org/commonjava/util/o11yphant-metrics-api/1.0/o11yphant-metrics-api-1.0.jar";
 
     public static final byte[] JAR_CONTENT = new byte[] { 0x01, 0x02, 0x03, 0x04 };

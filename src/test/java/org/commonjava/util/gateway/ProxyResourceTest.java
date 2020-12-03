@@ -12,6 +12,7 @@ import static org.commonjava.util.gateway.fixture.TestResources.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.contains;
 
 @QuarkusTestResource( TestResources.class )
 @QuarkusTest
@@ -34,6 +35,15 @@ public class ProxyResourceTest
                .get( NON_EXIST_PATH )
                .then()
                .statusCode( 404 );
+    }
+
+    @Test
+    public void testProxyGetServiceNotFound()
+    {
+        given().when()
+               .get( SERVICE_NOT_FOUND_PATH )
+               .then()
+               .statusCode( 500 );
     }
 
     @Test
@@ -73,8 +83,7 @@ public class ProxyResourceTest
                         + "  \"key\": \"maven:hosted:local-deployments\","
                         + "  \"type\": \"hosted\","
                         + "  \"packageType\": \"maven\","
-                        + "  \"name\": \"local-deployments\","
-                        + "  \"allow_snapshots\": true"
+                        + "  \"name\": \"local-deployments\""
                         + "}";
         /* @formatter:on */
         given().when()
