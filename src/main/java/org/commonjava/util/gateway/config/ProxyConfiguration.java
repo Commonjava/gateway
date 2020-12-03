@@ -16,6 +16,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,7 +33,7 @@ public class ProxyConfiguration
 
     private Retry retry;
 
-    private Set<ServiceConfig> services;
+    private Set<ServiceConfig> services = Collections.synchronizedSet( new HashSet<>() );
 
     public Set<ServiceConfig> getServices()
     {
@@ -109,7 +111,7 @@ public class ProxyConfiguration
             String md5 = DigestUtils.md5Hex( str ).toUpperCase();
             if ( md5.equals( md5Hex ) )
             {
-                logger.debug( "Skip, NO_CHANGE" );
+                logger.info( "Skip, NO_CHANGE" );
                 return;
             }
 
@@ -131,13 +133,12 @@ public class ProxyConfiguration
                 this.retry.copyFrom( parsed.retry );
             }
 
-            if ( this.services == null )
+            if ( parsed.services != null )
             {
-                this.services = parsed.services;
-            }
-            else if ( parsed.services != null )
-            {
-                this.services.addAll( parsed.services );
+                parsed.services.forEach( sv -> {
+                    this.services.remove( sv ); // remove it first so the add can replace the old one
+                    this.services.add( sv );
+                } );
             }
         }
         catch ( IOException e )
@@ -184,9 +185,9 @@ public class ProxyConfiguration
 
     public static class Retry
     {
-        public int count;
+        public volatile int count;
 
-        public long interval;
+        public volatile long interval;
 
         @Override
         public String toString()
