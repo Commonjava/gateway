@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -39,12 +40,17 @@ public class Classifier
         HttpMethod method = request.method();
 
         ProxyConfiguration.ServiceConfig service = null;
-        for ( ProxyConfiguration.ServiceConfig sv : serviceConfiguration.getServices() )
+
+        Set<ProxyConfiguration.ServiceConfig> services = serviceConfiguration.getServices();
+        if ( services != null )
         {
-            if ( path.matches( sv.pathPattern ) && ( sv.methods == null || sv.methods.contains( method.name() ) ) )
+            for ( ProxyConfiguration.ServiceConfig sv : services )
             {
-                service = sv;
-                break;
+                if ( path.matches( sv.pathPattern ) && ( sv.methods == null || sv.methods.contains( method.name() ) ) )
+                {
+                    service = sv;
+                    break;
+                }
             }
         }
 
