@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class RefreshProxyConfiguration
 {
     @Inject
-    private ProxyConfiguration proxyConfiguration;
+    ProxyConfiguration proxyConfiguration;
 
     @Scheduled( delay = 30, delayUnit = TimeUnit.SECONDS, every = "30s" )
     void refresh()

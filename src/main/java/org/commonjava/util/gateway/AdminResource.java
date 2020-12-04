@@ -17,7 +17,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 public class AdminResource
 {
     @Inject
-    private AdminService adminService;
+    AdminService adminService;
 
     @GET
     @Produces( APPLICATION_JSON )

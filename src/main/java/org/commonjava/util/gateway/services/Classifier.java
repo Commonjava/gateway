@@ -26,7 +26,7 @@ public class Classifier
     Vertx vertx;
 
     @Inject
-    private ProxyConfiguration serviceConfiguration;
+    ProxyConfiguration serviceConfiguration;
 
     private Map<ProxyConfiguration.ServiceConfig, WebClient> clientMap = new ConcurrentHashMap<>();
 

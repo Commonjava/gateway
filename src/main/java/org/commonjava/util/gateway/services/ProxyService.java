@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.apache.commons.io.IOUtils;
+import org.commonjava.util.gateway.interceptor.ProxyExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +22,13 @@ import static org.commonjava.util.gateway.GatewayConstants.EXTERNAL_ID;
 import static org.commonjava.util.gateway.GatewayConstants.TRACE_ID;
 
 @ApplicationScoped
+@ProxyExceptionHandler
 public class ProxyService
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Inject
-    private Classifier classifier;
+    Classifier classifier;
 
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
     {

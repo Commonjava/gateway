@@ -43,7 +43,8 @@ public class ProxyResourceTest
         given().when()
                .get( SERVICE_NOT_FOUND_PATH )
                .then()
-               .statusCode( 500 );
+               .statusCode( 400 )
+               .body( contains( "Service not found" ) );
     }
 
     @Test

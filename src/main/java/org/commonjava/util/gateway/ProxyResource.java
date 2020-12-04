@@ -26,7 +26,7 @@ public class ProxyResource
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Inject
-    private ProxyService proxyService;
+    ProxyService proxyService;
 
     @HEAD
     public Uni<Response> head( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
