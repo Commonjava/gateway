@@ -18,22 +18,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
-@Path( "/api/{path: (.*)}" )
+@Path( "/{path: (.*)}" )
 public class ProxyResource
 {
-    private static final String API_ROOT = "/api";
-
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Inject
-    private ProxyService proxyService;
+    ProxyService proxyService;
 
     @HEAD
     public Uni<Response> head( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
         logger.debug( "Head resource: {}", path );
-        return proxyService.doHead( API_ROOT + "/" + path, request );
+        return proxyService.doHead( path, request );
     }
 
     @GET
@@ -41,7 +39,7 @@ public class ProxyResource
                     throws Exception
     {
         logger.debug( "Get resource: {}", path );
-        return proxyService.doGet( API_ROOT + "/" + path, request );
+        return proxyService.doGet( path, request );
     }
 
     @POST
@@ -49,7 +47,7 @@ public class ProxyResource
                                final @Context HttpServerRequest request ) throws Exception
     {
         logger.debug( "Post resource: {}", path );
-        return proxyService.doPost( API_ROOT + "/" + path, is, request );
+        return proxyService.doPost( path, is, request );
     }
 
     @PUT
@@ -57,7 +55,7 @@ public class ProxyResource
                               final @Context HttpServerRequest request ) throws Exception
     {
         logger.debug( "Put resource: {}", path );
-        return proxyService.doPut( API_ROOT + "/" + path, is, request );
+        return proxyService.doPut( path, is, request );
     }
 
     @DELETE
@@ -65,7 +63,7 @@ public class ProxyResource
                     throws Exception
     {
         logger.debug( "Delete resource: {}", path );
-        return proxyService.doDelete( API_ROOT + "/" + path, request );
+        return proxyService.doDelete( path, request );
     }
 
 }

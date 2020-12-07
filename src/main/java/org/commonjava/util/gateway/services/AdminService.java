@@ -11,7 +11,7 @@ import javax.inject.Inject;
 public class AdminService
 {
     @Inject
-    private ProxyConfiguration serviceConfiguration;
+    ProxyConfiguration serviceConfiguration;
 
     public Uni<JsonObject> getProxyConfig()
     {

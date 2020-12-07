@@ -2,6 +2,7 @@
 quarkus:
     http:
         port: 8080
+        read-timeout: 30m
         limits:
           max-body-size: 500M
 

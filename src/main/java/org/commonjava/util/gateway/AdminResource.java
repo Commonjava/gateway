@@ -13,15 +13,15 @@ import javax.ws.rs.core.Context;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path( "/" )
+@Path( "/proxy" )
 public class AdminResource
 {
     @Inject
-    private AdminService adminService;
+    AdminService adminService;
 
     @GET
     @Produces( APPLICATION_JSON )
-    @Path( "/proxy/config" )
+    @Path( "/config" )
     public Uni<JsonObject> getProxyConfig( final @Context HttpServerRequest request ) throws Exception
     {
         return adminService.getProxyConfig();

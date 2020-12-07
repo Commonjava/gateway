@@ -1,6 +1,7 @@
 # Proxy services (test only, override this on prod)
 proxy:
-    services:
-        - host: localhost
-          port: 9090
-          path-pattern: /api/(content|admin)/.+
+  read-timeout: 1s
+  services:
+    - host: localhost
+      port: 9090
+      path-pattern: /api/(content|admin|promote)/.+
