@@ -22,9 +22,17 @@ public class AdminResource
     @GET
     @Produces( APPLICATION_JSON )
     @Path( "/config" )
-    public Uni<JsonObject> getProxyConfig( final @Context HttpServerRequest request ) throws Exception
+    public Uni<JsonObject> getProxyConfig( final @Context HttpServerRequest request )
     {
         return adminService.getProxyConfig();
+    }
+
+    @GET
+    @Produces( APPLICATION_JSON )
+    @Path( "/info" )
+    public Uni<JsonObject> getProxyInfo( final @Context HttpServerRequest request )
+    {
+        return adminService.getProxyInfo();
     }
 
 }

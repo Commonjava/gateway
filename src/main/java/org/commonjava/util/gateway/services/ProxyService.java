@@ -43,7 +43,7 @@ public class ProxyService
     Classifier classifier;
 
     @PostConstruct
-    private void init()
+    void init()
     {
         String readTimeout = proxyConfiguration.getReadTimeout();
         if ( readTimeout != null )
