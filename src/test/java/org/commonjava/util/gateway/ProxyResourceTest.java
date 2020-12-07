@@ -2,6 +2,7 @@ package org.commonjava.util.gateway;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.response.Response;
 import org.commonjava.util.gateway.fixture.TestResources;
 import org.junit.jupiter.api.Test;
 
@@ -9,10 +10,10 @@ import java.util.Date;
 
 import static io.restassured.RestAssured.given;
 import static org.commonjava.util.gateway.fixture.TestResources.*;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.contains;
 
 @QuarkusTestResource( TestResources.class )
 @QuarkusTest
@@ -44,7 +45,7 @@ public class ProxyResourceTest
                .get( SERVICE_NOT_FOUND_PATH )
                .then()
                .statusCode( 400 )
-               .body( contains( "Service not found" ) );
+               .body( containsString( "Service not found" ) );
     }
 
     @Test
@@ -103,6 +104,16 @@ public class ProxyResourceTest
                .put( PUT_PATH )
                .then()
                .statusCode( anyOf( is( 201 ), is( 204 ) ) );
+    }
+
+    @Test
+    public void testProxyTimeout()
+    {
+        given().when()
+               .post( PROMOTE_TIMEOUT_PATH )
+               .then()
+               .statusCode( is( 500 ) )
+               .body( containsString( "timeout" ) );
     }
 
 }

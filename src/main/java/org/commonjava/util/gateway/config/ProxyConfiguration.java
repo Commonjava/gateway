@@ -31,6 +31,14 @@ public class ProxyConfiguration
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
+    @JsonProperty( "read-timeout" )
+    private String readTimeout;
+
+    public String getReadTimeout()
+    {
+        return readTimeout;
+    }
+
     private Retry retry;
 
     private Set<ServiceConfig> services = Collections.synchronizedSet( new HashSet<>() );
@@ -48,7 +56,8 @@ public class ProxyConfiguration
     @Override
     public String toString()
     {
-        return "ProxyConfiguration{" + "retry=" + retry + ", services=" + services + '}';
+        return "ProxyConfiguration{" + "readTimeout='" + readTimeout + '\'' + ", retry=" + retry + ", services="
+                        + services + '}';
     }
 
     @PostConstruct
@@ -123,6 +132,11 @@ public class ProxyConfiguration
             JsonObject jsonObject = JsonObject.mapFrom( proxy );
             ProxyConfiguration parsed = jsonObject.mapTo( this.getClass() );
             logger.info( "Loaded: {}", parsed );
+
+            if ( parsed.readTimeout != null )
+            {
+                this.readTimeout = parsed.readTimeout;
+            }
 
             if ( this.retry == null )
             {

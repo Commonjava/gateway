@@ -1,6 +1,6 @@
-package org.commonjava.util.gateway;
+package org.commonjava.util.gateway.services;
 
-public class GatewayConstants
+public class ProxyConstants
 {
     public static final String EXTERNAL_ID = "internal-id";
 
