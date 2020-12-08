@@ -1,5 +1,6 @@
 package org.commonjava.util.gateway.services;
 
+import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
@@ -19,12 +20,12 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static io.vertx.core.http.impl.HttpUtils.normalizePath;
 import static javax.ws.rs.core.HttpHeaders.HOST;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
 import static org.commonjava.util.gateway.services.ProxyConstants.EXTERNAL_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.TRACE_ID;
 
@@ -34,7 +35,9 @@ public class ProxyService
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private long timeout = TimeUnit.MINUTES.toMillis( 30 ); // default 30 minutes
+    private long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis( 30 ); // default 30 minutes
+
+    private volatile long timeout;
 
     @Inject
     ProxyConfiguration proxyConfiguration;
@@ -43,20 +46,35 @@ public class ProxyService
     Classifier classifier;
 
     @PostConstruct
-    private void init()
+    void init()
     {
+        timeout = readTimeout();
+        logger.debug( "Init timeout: {}", timeout );
+    }
+
+    private long readTimeout()
+    {
+        long t = DEFAULT_TIMEOUT;
         String readTimeout = proxyConfiguration.getReadTimeout();
-        if ( readTimeout != null )
+        if ( isNotBlank( readTimeout ) )
         {
             try
             {
-                timeout = Duration.parse( "pt" + readTimeout ).toMillis();
+                t = Duration.parse( "pt" + readTimeout ).toMillis();
             }
             catch ( Exception e )
             {
-                logger.error( "Failed to parse proxy.read-timeout", e );
+                logger.error( "Failed to parse proxy.read-timeout, use default " + DEFAULT_TIMEOUT, e );
             }
         }
+        return t;
+    }
+
+    @ConsumeEvent( value = EVENT_PROXY_CONFIG_CHANGE )
+    void handleConfigChange( String message )
+    {
+        timeout = readTimeout();
+        logger.debug( "Handle event {}, timeout: {}", EVENT_PROXY_CONFIG_CHANGE, timeout );
     }
 
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
