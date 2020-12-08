@@ -217,7 +217,7 @@ public class ProxyConfiguration
     {
         public volatile int count;
 
-        public volatile long interval;
+        public volatile long interval; // in millis
 
         @Override
         public String toString()
