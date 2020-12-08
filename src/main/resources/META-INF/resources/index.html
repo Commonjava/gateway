@@ -33,12 +33,30 @@
 
 <div class="container">
     <h1>Gateway</h1>
-
     <hr/>
-    <div class="row">
-        <a target="_new" href="https://github.com/Commonjava/gateway">Docs</a></span> |
+
+
+    <div class="cards">
+        <div class="card">
+            <h5 class="card-header">About</h5>
+            <p class="card-body"><b>Gateway</b> is an API facade to hide micro services from end users.
+                It receives HTTP requests from clients (e.g., mvn) and
+                forward to different services.</p>
+        </div>
+
+        <img src="gateway.png">
+
+        <div class="card">
+            <h5 class="card-header">Rules</h5>
+            <p class="card-body">There is a classifier to determine the target service via Url
+                patterns and HTTP methods. Click <a target="_new" href="proxy/config">HERE</a> to see the <b>proxy rules</b>.</p>
+        </div>
+    </div>
+
+    <div style="position: fixed; bottom: 5%; text-align: center;">
+        <a target="_new" href="https://github.com/Commonjava/gateway">Github Project</a></span> |
         Version: {{ stats.version }} |
-        Commit ID: <a target="_new" class="fa fa-btn" href="http://github.com/commonjava/gateway/commit/{{stats['commit-id']}}">{{ stats["commit.id"] }}</a> |
+        Commit ID: <a target="_new" href="http://github.com/commonjava/gateway/commit/{{stats['commit-id']}}">{{ stats["commit.id"] }}</a> |
         Built on {{ stats["timestamp"] }} by {{ stats["builder"] }}
     </div>
 
