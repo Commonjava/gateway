@@ -2,6 +2,7 @@ package org.commonjava.util.gateway.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.Startup;
+import io.vertx.mutiny.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -11,6 +12,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -24,12 +26,16 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
 
 @Startup
 @ApplicationScoped
 public class ProxyConfiguration
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
+
+    @Inject
+    transient EventBus bus;
 
     @JsonProperty( "read-timeout" )
     private String readTimeout;
@@ -124,13 +130,7 @@ public class ProxyConfiguration
                 return;
             }
 
-            md5Hex = md5;
-            Yaml yaml = new Yaml();
-            Map<String, Object> obj = yaml.load( str );
-            Map<String, Object> proxy = (Map) obj.get( "proxy" );
-
-            JsonObject jsonObject = JsonObject.mapFrom( proxy );
-            ProxyConfiguration parsed = jsonObject.mapTo( this.getClass() );
+            ProxyConfiguration parsed = parseConfig(str);
             logger.info( "Loaded: {}", parsed );
 
             if ( parsed.readTimeout != null )
@@ -154,11 +154,27 @@ public class ProxyConfiguration
                     this.services.add( sv );
                 } );
             }
+
+            if ( md5Hex != null )
+            {
+                bus.publish( EVENT_PROXY_CONFIG_CHANGE, "" );
+            }
+
+            md5Hex = md5;
         }
         catch ( IOException e )
         {
             logger.error( "Load failed", e );
         }
+    }
+
+    private ProxyConfiguration parseConfig( String str )
+    {
+        Yaml yaml = new Yaml();
+        Map<String, Object> obj = yaml.load( str );
+        Map<String, Object> proxy = (Map) obj.get( "proxy" );
+        JsonObject jsonObject = JsonObject.mapFrom( proxy );
+        return jsonObject.mapTo( this.getClass() );
     }
 
     public static class ServiceConfig
