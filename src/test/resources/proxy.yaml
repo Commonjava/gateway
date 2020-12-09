@@ -1,6 +1,9 @@
-# Proxy services (test only, override this on prod)
+# Proxy services (test only)
 proxy:
   read-timeout: 1s
+  retry:
+    count: 2
+    interval: 3000
   services:
     - host: localhost
       port: 9090

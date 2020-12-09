@@ -2,7 +2,6 @@ package org.commonjava.util.gateway;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.response.Response;
 import org.commonjava.util.gateway.fixture.TestResources;
 import org.junit.jupiter.api.Test;
 
@@ -114,6 +113,15 @@ public class ProxyResourceTest
                .then()
                .statusCode( is( 500 ) )
                .body( containsString( "timeout" ) );
+    }
+
+    @Test
+    public void testProxyRetry()
+    {
+        given().when().post( EXCEPTION_PATH )
+               .then()
+               .statusCode( is( 500 ) )
+               .body( containsString( "Retries exhausted" ) );
     }
 
 }

@@ -3,6 +3,7 @@ package org.commonjava.util.gateway.services;
 import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
@@ -16,6 +17,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
@@ -37,6 +39,8 @@ public class ProxyService
 
     private long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis( 30 ); // default 30 minutes
 
+    private long DEFAULT_BACKOFF_MILLIS = Duration.ofSeconds( 5 ).toMillis();
+
     private volatile long timeout;
 
     @Inject
@@ -49,7 +53,7 @@ public class ProxyService
     void init()
     {
         timeout = readTimeout();
-        logger.debug( "Init timeout: {}", timeout );
+        logger.debug( "Init, timeout: {}", timeout );
     }
 
     private long readTimeout()
@@ -74,7 +78,7 @@ public class ProxyService
     void handleConfigChange( String message )
     {
         timeout = readTimeout();
-        logger.debug( "Handle event {}, timeout: {}", EVENT_PROXY_CONFIG_CHANGE, timeout );
+        logger.debug( "Handle event {}, refresh timeout: {}", EVENT_PROXY_CONFIG_CHANGE, timeout );
     }
 
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
@@ -128,10 +132,21 @@ public class ProxyService
 
     private Uni<Response> wrapAsyncCall( Uni<HttpResponse<Buffer>> asyncCall )
     {
-        return asyncCall.onItem()
-                        .transform( this::convertProxyResp )
-                        .onFailure()
-                        .recoverWithItem( this::handleProxyException );
+        ProxyConfiguration.Retry retry = proxyConfiguration.getRetry();
+        Uni<Response> ret = asyncCall.onItem().transform( this::convertProxyResp );
+        if ( retry.count > 0 )
+        {
+            long backOff = retry.interval;
+            if ( retry.interval <= 0 )
+            {
+                backOff = DEFAULT_BACKOFF_MILLIS;
+            }
+            ret = ret.onFailure( t -> (t instanceof IOException || t instanceof VertxException ) )
+               .retry()
+               .withBackOff( Duration.ofMillis( backOff ) )
+               .atMost( retry.count );
+        }
+        return ret.onFailure().recoverWithItem( this::handleProxyException );
     }
 
     /**
@@ -141,7 +156,7 @@ public class ProxyService
     private Response handleProxyException( Throwable t )
     {
         logger.error( "Proxy error", t );
-        return Response.status( INTERNAL_SERVER_ERROR ).entity( t.getClass().getName() + ": " + t.getMessage() ).build();
+        return Response.status( INTERNAL_SERVER_ERROR ).entity( t + ". Caused by: " + t.getCause() ).build();
     }
 
     /**
@@ -150,7 +165,8 @@ public class ProxyService
      */
     private Response convertProxyResp( HttpResponse<Buffer> resp )
     {
-        logger.debug( "Proxy resp: {} {}, resp headers:\n{}", resp.statusCode(), resp.statusMessage(), resp.headers() );
+        logger.debug( "Proxy resp: {} {}", resp.statusCode(), resp.statusMessage() );
+        logger.trace( "Resp headers:\n{}", resp.headers() );
         Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
         resp.headers().forEach( header -> builder.header( header.getKey(), header.getValue() ) );
         if ( resp.body() != null )
@@ -167,7 +183,7 @@ public class ProxyService
         io.vertx.mutiny.core.MultiMap ret = io.vertx.mutiny.core.MultiMap.newInstance( headers )
                                                                          .remove( HOST )
                                                                          .add( TRACE_ID, getTraceId( headers ) );
-        logger.debug( "Req headers:\n{}", ret );
+        logger.trace( "Req headers:\n{}", ret );
         return ret;
     }
 

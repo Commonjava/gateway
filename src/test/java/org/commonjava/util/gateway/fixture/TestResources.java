@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
@@ -48,6 +49,8 @@ public class TestResources
 
     public static final String PROMOTE_TIMEOUT_PATH = "/api/promote/something/really/big";
 
+    public static final String EXCEPTION_PATH = "/api/content/maven/hosted/local-deployments/exception.jar";
+
     private WireMockServer wireMockServer;
 
     @Override
@@ -77,6 +80,9 @@ public class TestResources
         wireMockServer.stubFor( post( LARGE_JAR_PATH ).willReturn( aResponse().withStatus( 201 ) ));
 
         wireMockServer.stubFor( post( PROMOTE_TIMEOUT_PATH ).willReturn( aResponse().withFixedDelay( 3000 ).withStatus( 200 ) ) );
+
+        wireMockServer.stubFor( post( EXCEPTION_PATH ).willReturn(
+                        aResponse().withFault( Fault.MALFORMED_RESPONSE_CHUNK ) ) );
 
         return Collections.EMPTY_MAP;
     }
