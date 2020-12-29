@@ -11,13 +11,13 @@ import javax.interceptor.InvocationContext;
 import javax.ws.rs.core.Response;
 
 @Interceptor
-@ProxyExceptionHandler
-public class ProxyExceptionHandlerInterceptor
+@ExceptionHandler
+public class ExceptionHandlerInterceptor
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @AroundInvoke
-    public Object handleException( InvocationContext invocationContext ) throws Exception
+    public Object handle( InvocationContext invocationContext ) throws Exception
     {
         try
         {
@@ -25,7 +25,13 @@ public class ProxyExceptionHandlerInterceptor
         }
         catch ( ServiceNotFoundException e )
         {
-            return Uni.createFrom().item( Response.status( 400 ).entity( e.getMessage() ).build() );
+            return replaceWith400( e );
         }
     }
+
+    private Object replaceWith400( ServiceNotFoundException e )
+    {
+        return Uni.createFrom().item( Response.status( 400 ).entity( e.getMessage() ).build() );
+    }
+
 }

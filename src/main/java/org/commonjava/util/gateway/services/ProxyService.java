@@ -9,7 +9,8 @@ import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.apache.commons.io.IOUtils;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
-import org.commonjava.util.gateway.interceptor.ProxyExceptionHandler;
+import org.commonjava.util.gateway.interceptor.ExceptionHandler;
+import org.commonjava.util.gateway.interceptor.MetricsHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +28,13 @@ import static io.vertx.core.http.impl.HttpUtils.normalizePath;
 import static javax.ws.rs.core.HttpHeaders.HOST;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
-import static org.commonjava.util.gateway.services.ProxyConstants.EXTERNAL_ID;
-import static org.commonjava.util.gateway.services.ProxyConstants.TRACE_ID;
 
 @ApplicationScoped
-@ProxyExceptionHandler
+@MetricsHandler
+@ExceptionHandler
 public class ProxyService
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );

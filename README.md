@@ -21,7 +21,7 @@ proxy:
     services:
         - host: indy-infra-nos-automation.cloud.paas.psi.redhat.com
           port: 80
-          path-pattern: /api/.+"
+          path-pattern: /api/.+
 ```
 
 When receiving a HTTP request, it matches its **path and method**
@@ -39,7 +39,7 @@ $ cd gateway
 $ mvn clean compile
 ```
 
-2. Create ./target/proxy.yaml and copy the above rules to it.
+2. Edit ./src/main/resources/proxy.yaml and add proxy rules into it.
 
 3. Start gateway in debug mode
 ```
