@@ -14,7 +14,7 @@ public class RefreshProxyConfiguration
     @Inject
     ProxyConfiguration proxyConfiguration;
 
-    @Scheduled( delay = 30, delayUnit = TimeUnit.SECONDS, every = "30s" )
+    @Scheduled( delay = 60, delayUnit = TimeUnit.SECONDS, every = "60s" )
     void refresh()
     {
         proxyConfiguration.load( false );

@@ -11,6 +11,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @InterceptorBinding
 @Target( { TYPE, METHOD } )
 @Retention( RUNTIME )
-public @interface ProxyExceptionHandler
+public @interface MetricsHandler
 {
 }

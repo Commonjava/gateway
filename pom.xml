@@ -36,6 +36,7 @@
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <quarkus.platform.version>1.9.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+        <o11phant.version>1.3-SNAPSHOT</o11phant.version>
     </properties>
 
     <dependencyManagement>
@@ -105,6 +106,11 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonjava.util</groupId>
+            <artifactId>o11yphant-honeycomb-api</artifactId>
+            <version>${o11phant.version}</version>
         </dependency>
     </dependencies>
 
