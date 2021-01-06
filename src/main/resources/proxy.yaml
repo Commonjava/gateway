@@ -3,7 +3,7 @@ proxy:
   retry:
     count: 3
     interval: 3000
-  services:
-    - host: indy-infra-nos-automation.cloud.paas.psi.redhat.com
-      port: 80
-      path-pattern: /api/.+
+#  services:
+#    - host: indy-infra-nos-automation.cloud.paas.psi.redhat.com
+#      port: 80
+#      path-pattern: /api/.+
