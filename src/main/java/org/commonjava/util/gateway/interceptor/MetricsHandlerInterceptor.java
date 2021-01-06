@@ -87,6 +87,7 @@ public class MetricsHandlerInterceptor
             honeycombManager.startRootTracer( honeycombConfiguration.getFunctionName( path ) ); // function as span name
             long elapse = currentTimeMillis() - t.get();
             honeycombManager.addFields( elapse, request, item, err );
+            honeycombManager.addRootSpanFields();
             honeycombManager.endTrace();
         }
     }
