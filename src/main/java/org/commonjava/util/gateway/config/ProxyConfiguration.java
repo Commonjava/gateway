@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -130,7 +129,7 @@ public class ProxyConfiguration
                 return;
             }
 
-            ProxyConfiguration parsed = parseConfig(str);
+            ProxyConfiguration parsed = parseConfig( str );
             logger.info( "Loaded: {}", parsed );
 
             if ( parsed.readTimeout != null )
@@ -150,8 +149,7 @@ public class ProxyConfiguration
             if ( parsed.services != null )
             {
                 parsed.services.forEach( sv -> {
-                    this.services.remove( sv ); // remove it first so the add can replace the old one
-                    this.services.add( sv );
+                    overrideIfPresent( sv );
                 } );
             }
 
@@ -168,13 +166,24 @@ public class ProxyConfiguration
         }
     }
 
+    private void overrideIfPresent( ServiceConfig sv )
+    {
+        this.services.remove( sv ); // remove first so it can replace the old one
+        this.services.add( sv );
+    }
+
     private ProxyConfiguration parseConfig( String str )
     {
         Yaml yaml = new Yaml();
         Map<String, Object> obj = yaml.load( str );
         Map<String, Object> proxy = (Map) obj.get( "proxy" );
         JsonObject jsonObject = JsonObject.mapFrom( proxy );
-        return jsonObject.mapTo( this.getClass() );
+        ProxyConfiguration ret = jsonObject.mapTo( this.getClass() );
+        if ( ret.services != null )
+        {
+            ret.services.forEach( sv -> sv.normalize() );
+        }
+        return ret;
     }
 
     public static class ServiceConfig
@@ -183,7 +192,7 @@ public class ProxyConfiguration
 
         public int port;
 
-        public List<String> methods;
+        public String methods;
 
         @JsonProperty( "path-pattern" )
         public String pathPattern;
@@ -196,20 +205,28 @@ public class ProxyConfiguration
             if ( o == null || getClass() != o.getClass() )
                 return false;
             ServiceConfig that = (ServiceConfig) o;
-            return port == that.port && host.equals( that.host );
+            return Objects.equals( methods, that.methods ) && pathPattern.equals( that.pathPattern );
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash( host, port );
+            return Objects.hash( methods, pathPattern );
         }
 
         @Override
         public String toString()
         {
-            return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", methods=" + methods
+            return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", methods='" + methods + '\''
                             + ", pathPattern='" + pathPattern + '\'' + '}';
+        }
+
+        void normalize()
+        {
+            if ( methods != null )
+            {
+                methods = methods.toUpperCase();
+            }
         }
     }
 

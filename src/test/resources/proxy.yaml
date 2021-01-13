@@ -8,3 +8,13 @@ proxy:
     - host: localhost
       port: 9090
       path-pattern: /api/(content|admin|promote)/.+
+
+# test config override, either test-1 or test-2 exists, but not both
+    - host: test-1
+      port: 9090
+      methods: get,post
+      path-pattern: /abc/.+
+    - host: test-2
+      port: 9090
+      methods: get,post
+      path-pattern: /abc/.+
