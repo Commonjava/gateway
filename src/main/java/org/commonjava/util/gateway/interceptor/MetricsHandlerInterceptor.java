@@ -84,7 +84,7 @@ public class MetricsHandlerInterceptor
         {
             logger.debug( "Done, item: {}, err: {}", item, err );
             String path = request.path();
-            honeycombManager.startRootTracer( honeycombConfiguration.getFunctionName( path ) ); // function as span name
+            honeycombManager.startRootTracer( "gateway-" + honeycombConfiguration.getFunctionName( path ) ); // gateway-function as span name
             long elapse = currentTimeMillis() - t.get();
             honeycombManager.addFields( elapse, request, item, err );
             honeycombManager.addRootSpanFields();
