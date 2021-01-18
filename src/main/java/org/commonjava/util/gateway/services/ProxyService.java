@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -168,15 +169,29 @@ public class ProxyService
     private Response convertProxyResp( HttpResponse<Buffer> resp )
     {
         logger.debug( "Proxy resp: {} {}", resp.statusCode(), resp.statusMessage() );
-        logger.trace( "Resp headers:\n{}", resp.headers() );
+        logger.trace( "Raw resp headers:\n{}", resp.headers() );
         Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
-        resp.headers().forEach( header -> builder.header( header.getKey(), header.getValue() ) );
+        resp.headers().forEach( header -> {
+            if ( respHeaderAllowed( header ) )
+            {
+                builder.header( header.getKey(), header.getValue() );
+            }
+        } );
         if ( resp.body() != null )
         {
             byte[] bytes = resp.body().getBytes();
             builder.entity( bytes );
         }
         return builder.build();
+    }
+
+    /**
+     * Raw content-length/connection header breaks http2 protocol. It is safe to exclude them.
+     */
+    private boolean respHeaderAllowed( Map.Entry<String, String> header )
+    {
+        String key = header.getKey();
+        return !( key.equalsIgnoreCase( "content-length" ) || key.equalsIgnoreCase( "connection" ) );
     }
 
     private io.vertx.mutiny.core.MultiMap getHeaders( HttpServerRequest request )
