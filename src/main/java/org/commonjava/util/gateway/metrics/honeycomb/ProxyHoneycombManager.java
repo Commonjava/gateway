@@ -32,7 +32,7 @@ public class ProxyHoneycombManager
     public void init()
     {
         super.init();
-        registerRootSpanFields( new JvmRootSpanFields() );
+        registerRootSpanFields( JvmRootSpanFields.getInstance() );
     }
 
     public void addFields( long elapse, HttpServerRequest request, Object item, Throwable err )
