@@ -19,9 +19,10 @@ Gateway uses a config file to define proxy services. The configuration is in
 ```
 proxy:
     services:
-        - host: indy-infra-nos-automation.cloud.paas.psi.redhat.com
+        - host: repo1.maven.org
+          ssl: true
           port: 80
-          path-pattern: /api/.+
+          path-pattern: /maven2/.+
 ```
 
 When receiving a HTTP request, it matches its **path and method**
