@@ -192,6 +192,8 @@ public class ProxyConfiguration
 
         public int port;
 
+        public boolean ssl;
+
         public String methods;
 
         @JsonProperty( "path-pattern" )
@@ -217,8 +219,8 @@ public class ProxyConfiguration
         @Override
         public String toString()
         {
-            return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", methods='" + methods + '\''
-                            + ", pathPattern='" + pathPattern + '\'' + '}';
+            return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", ssl=" + ssl + ", methods='"
+                            + methods + '\'' + ", pathPattern='" + pathPattern + '\'' + '}';
         }
 
         void normalize()

@@ -56,11 +56,14 @@ public class Classifier
 
         if ( service != null )
         {
-            return clientMap.computeIfAbsent( service,
-                                              k -> WebClient.create( vertx,
-                                                       new WebClientOptions()
-                                                             .setDefaultHost( k.host )
-                                                                .setDefaultPort( k.port ) ) );
+            return clientMap.computeIfAbsent( service, k -> {
+                WebClientOptions options = new WebClientOptions().setDefaultHost( k.host ).setDefaultPort( k.port );
+                if ( k.ssl )
+                {
+                    options.setSsl( true ).setVerifyHost( false ).setTrustAll( true );
+                }
+                return WebClient.create( vertx, options );
+            } );
         }
         else
         {

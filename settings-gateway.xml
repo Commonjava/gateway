@@ -6,25 +6,8 @@
     <mirrors>
         <mirror>
             <mirrorOf>*</mirrorOf>
-            <url>http://localhost:8080/api/content/maven/group/public</url>
+            <url>http://localhost:8080/maven2</url>
         </mirror>
     </mirrors>
 
-    <profiles>
-        <profile>
-            <id>internal-deploy</id>
-            <properties>
-                <altReleaseDeploymentRepository>
-                    indy::default::http://localhost:8080/api/content/maven/hosted/local-releases
-                </altReleaseDeploymentRepository>
-                <altSnapshotDeploymentRepository>
-                    indy::default::http://localhost:8080/api/content/maven/hosted/local-deployments
-                </altSnapshotDeploymentRepository>
-            </properties>
-        </profile>
-    </profiles>
-
-    <activeProfiles>
-        <activeProfile>internal-deploy</activeProfile>
-    </activeProfiles>
 </settings>
