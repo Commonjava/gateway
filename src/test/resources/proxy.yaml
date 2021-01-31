@@ -7,7 +7,13 @@ proxy:
   services:
     - host: localhost
       port: 9090
-      path-pattern: /api/(content|admin|promote)/.+
+      path-pattern: "/api/(content|admin|promote)/.+"
+      cache:
+        enabled: true
+        readonly: false
+        pattern: ".+\\.(pom|jar)(\\.(md5|sha.+))?$" # only cache concrete files, not metadata
+        expire: 2s
+        #dir: /tmp/cache
 
 # test config override, either test-1 or test-2 exists, but not both
     - host: test-1

@@ -15,7 +15,7 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 @ApplicationScoped
 public class Classifier
@@ -30,12 +30,18 @@ public class Classifier
 
     private Map<ProxyConfiguration.ServiceConfig, WebClient> clientMap = new ConcurrentHashMap<>();
 
-    public <R> R classifyAnd( String path, HttpServerRequest request, Function<WebClient, R> action ) throws Exception
+    public <R> R classifyAnd( String path, HttpServerRequest request,
+                              BiFunction<WebClient, ProxyConfiguration.ServiceConfig, R> action ) throws Exception
     {
-        return action.apply( getWebClient( path, request ) );
+        ProxyConfiguration.ServiceConfig service = getServiceConfig( path, request );
+        if ( service == null )
+        {
+            throw new ServiceNotFoundException( "Service not found, path: " + path + ", method: " + request.method() );
+        }
+        return action.apply( getWebClient( service ), service );
     }
 
-    private WebClient getWebClient( String path, HttpServerRequest request ) throws Exception
+    private ProxyConfiguration.ServiceConfig getServiceConfig( String path, HttpServerRequest request ) throws Exception
     {
         HttpMethod method = request.method();
 
@@ -53,21 +59,18 @@ public class Classifier
                 }
             }
         }
+        return service;
+    }
 
-        if ( service != null )
-        {
-            return clientMap.computeIfAbsent( service, k -> {
-                WebClientOptions options = new WebClientOptions().setDefaultHost( k.host ).setDefaultPort( k.port );
-                if ( k.ssl )
-                {
-                    options.setSsl( true ).setVerifyHost( false ).setTrustAll( true );
-                }
-                return WebClient.create( vertx, options );
-            } );
-        }
-        else
-        {
-            throw new ServiceNotFoundException( "Service not found, path: " + path + ", method: " + method );
-        }
+    private WebClient getWebClient( ProxyConfiguration.ServiceConfig service ) throws Exception
+    {
+        return clientMap.computeIfAbsent( service, k -> {
+            WebClientOptions options = new WebClientOptions().setDefaultHost( k.host ).setDefaultPort( k.port );
+            if ( k.ssl )
+            {
+                options.setSsl( true ).setVerifyHost( false ).setTrustAll( true );
+            }
+            return WebClient.create( vertx, options );
+        } );
     }
 }

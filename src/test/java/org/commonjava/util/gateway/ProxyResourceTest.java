@@ -51,7 +51,7 @@ public class ProxyResourceTest
     public void testProxyGetBytes()
     {
         given().when()
-               .get( JAR_PATH )
+               .get( BYTE_FILE_PATH )
                .then()
                .statusCode( 200 )
                .body( notNullValue() );
