@@ -31,9 +31,9 @@ quarkus:
         always-include: true
 
 honeycomb:
-    enabled: true
+    enabled: false
     dataset: test
-    write-key: 61c935e7d6f5ef5b992fe142deb2569c
+    write-key: test
     base-sample-rate: 20
     functions: |-
       /api/content/.*|content|20,

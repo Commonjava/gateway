@@ -79,29 +79,14 @@ public class ProxyConfiguration
     private static final String PROXY_YAML = "proxy.yaml";
 
     /**
-     * Load proxy config from classpath resource (if init is true) and '${user.dir}/config/proxy.yaml'.
+     * Load proxy config from '${user.dir}/config/proxy.yaml'. If not found, load from default classpath resource.
      */
     public void load( boolean init )
-    {
-        if ( init )
-        {
-            InputStream res = this.getClass().getClassLoader().getResourceAsStream( PROXY_YAML );
-            if ( res != null )
-            {
-                logger.info( "Load from classpath, {}", PROXY_YAML );
-                doLoad( res );
-            }
-        }
-
-        loadFromFile();
-    }
-
-    private void loadFromFile()
     {
         File file = new File( USER_DIR, "config/" + PROXY_YAML );
         if ( file.exists() )
         {
-            logger.info( "Load from file, {}", file );
+            logger.info( "Load proxy config from file, {}", file );
             try
             {
                 doLoad( new FileInputStream( file ) );
@@ -112,9 +97,18 @@ public class ProxyConfiguration
                 return;
             }
         }
+        else if ( init )
+        {
+            logger.info( "Load proxy config from classpath resource, {}", PROXY_YAML );
+            InputStream res = this.getClass().getClassLoader().getResourceAsStream( PROXY_YAML );
+            if ( res != null )
+            {
+                doLoad( res );
+            }
+        }
         else
         {
-            logger.info( "Skip load, NO_SUCH_FILE, {}", file );
+            logger.info( "Skip loading proxy config - no such file: {}", file );
         }
     }
 
