@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
 
 @Startup
@@ -32,6 +34,8 @@ import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CO
 public class ProxyConfiguration
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
+
+    public static final String USER_DIR = System.getProperty( "user.dir" ); // where the JVM was invoked
 
     @Inject
     transient EventBus bus;
@@ -44,7 +48,7 @@ public class ProxyConfiguration
         return readTimeout;
     }
 
-    private Retry retry;
+    private volatile Retry retry;
 
     private Set<ServiceConfig> services = Collections.synchronizedSet( new HashSet<>() );
 
@@ -75,30 +79,14 @@ public class ProxyConfiguration
     private static final String PROXY_YAML = "proxy.yaml";
 
     /**
-     * Load proxy config from classpath resource (if init is true) and '${user.dir}/config/proxy.yaml'.
+     * Load proxy config from '${user.dir}/config/proxy.yaml'. If not found, load from default classpath resource.
      */
     public void load( boolean init )
     {
-        if ( init )
-        {
-            InputStream res = this.getClass().getClassLoader().getResourceAsStream( PROXY_YAML );
-            if ( res != null )
-            {
-                logger.info( "Load from classpath, {}", PROXY_YAML );
-                doLoad( res );
-            }
-        }
-
-        loadFromFile();
-    }
-
-    private void loadFromFile()
-    {
-        String userDir = System.getProperty( "user.dir" ); // where the JVM was invoked
-        File file = new File( userDir, "config/" + PROXY_YAML );
+        File file = new File( USER_DIR, "config/" + PROXY_YAML );
         if ( file.exists() )
         {
-            logger.info( "Load from file, {}", file );
+            logger.info( "Load proxy config from file, {}", file );
             try
             {
                 doLoad( new FileInputStream( file ) );
@@ -109,9 +97,18 @@ public class ProxyConfiguration
                 return;
             }
         }
+        else if ( init )
+        {
+            logger.info( "Load proxy config from classpath resource, {}", PROXY_YAML );
+            InputStream res = this.getClass().getClassLoader().getResourceAsStream( PROXY_YAML );
+            if ( res != null )
+            {
+                doLoad( res );
+            }
+        }
         else
         {
-            logger.info( "Skip load, NO_SUCH_FILE, {}", file );
+            logger.info( "Skip loading proxy config - no such file: {}", file );
         }
     }
 
@@ -137,14 +134,7 @@ public class ProxyConfiguration
                 this.readTimeout = parsed.readTimeout;
             }
 
-            if ( this.retry == null )
-            {
-                this.retry = parsed.retry;
-            }
-            else if ( parsed.retry != null )
-            {
-                this.retry.copyFrom( parsed.retry );
-            }
+            this.retry = parsed.retry;
 
             if ( parsed.services != null )
             {
@@ -196,6 +186,8 @@ public class ProxyConfiguration
 
         public String methods;
 
+        public Cache cache;
+
         @JsonProperty( "path-pattern" )
         public String pathPattern;
 
@@ -220,23 +212,27 @@ public class ProxyConfiguration
         public String toString()
         {
             return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", ssl=" + ssl + ", methods='"
-                            + methods + '\'' + ", pathPattern='" + pathPattern + '\'' + '}';
+                            + methods + '\'' + ", cache=" + cache + ", pathPattern='" + pathPattern + '\'' + '}';
         }
 
-        void normalize()
+        private void normalize()
         {
             if ( methods != null )
             {
                 methods = methods.toUpperCase();
+            }
+            if ( cache != null )
+            {
+                cache.normalize();
             }
         }
     }
 
     public static class Retry
     {
-        public volatile int count;
+        public int count;
 
-        public volatile long interval; // in millis
+        public long interval; // in millis
 
         @Override
         public String toString()
@@ -244,10 +240,55 @@ public class ProxyConfiguration
             return "Retry{" + "count=" + count + ", interval=" + interval + '}';
         }
 
-        public void copyFrom( Retry retry )
+    }
+
+    public static class Cache
+    {
+        public boolean enabled;
+
+        // true if only read from pre-seed cache, or write to cache for each successful GET request
+        public boolean readonly;
+
+        // only files match the pattern are cached, null for all files
+        public String pattern;
+
+        // expiration in PnDTnHnMn, as parsed by java.time.Duration
+        public String expire;
+
+        // cache dir, default ${runtime_root}/cache
+        public String dir;
+
+        private void normalize()
         {
-            count = retry.count;
-            interval = retry.interval;
+            if ( isNotBlank( expire ) )
+            {
+                String ls = expire.toLowerCase();
+                String prefix;
+                if ( ls.contains( "d" ) )
+                {
+                    prefix = "P";
+                }
+                else
+                {
+                    prefix = "PT";
+                }
+                expireInSeconds = Duration.parse( prefix + expire ).getSeconds();
+            }
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Cache{" + "enabled=" + enabled + ", readonly=" + readonly + ", pattern='" + pattern + '\''
+                            + ", expire='" + expire + '\'' + ", dir='" + dir + '\'' + ", expireInSeconds="
+                            + expireInSeconds + '}';
+        }
+
+        private transient long expireInSeconds;
+
+        public long getExpireInSeconds()
+        {
+            return expireInSeconds;
         }
     }
 }

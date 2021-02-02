@@ -32,6 +32,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
+import static org.commonjava.util.gateway.util.CacheUtils.wrapWithCache;
 
 @ApplicationScoped
 @MetricsHandler
@@ -87,7 +88,7 @@ public class ProxyService
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    client -> wrapAsyncCall( client.head( p )
+                                                                    (client, service) -> wrapAsyncCall( client.head( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
                                                                                                    .send() ) ) );
@@ -96,10 +97,10 @@ public class ProxyService
     public Uni<Response> doGet( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    client -> wrapAsyncCall( client.get( p )
+                                                                    (client, service) -> wrapWithCache( wrapAsyncCall( client.get( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .send() ) ) );
+                                                                                                   .send()), p, service ) ) );
     }
 
     public Uni<Response> doPost( String path, InputStream is, HttpServerRequest request ) throws Exception
@@ -107,7 +108,7 @@ public class ProxyService
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    client -> wrapAsyncCall( client.post( p )
+                                                                    (client, service) -> wrapAsyncCall( client.post( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
                                                                                                    .sendBuffer( buf ) ) ) );
@@ -118,7 +119,7 @@ public class ProxyService
         Buffer buf = Buffer.buffer( IOUtils.toByteArray( is ) );
 
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    client -> wrapAsyncCall( client.put( p )
+                                                                    (client, service) -> wrapAsyncCall( client.put( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
                                                                                                    .sendBuffer( buf ) ) ) );
@@ -127,7 +128,7 @@ public class ProxyService
     public Uni<Response> doDelete( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    client -> wrapAsyncCall( client.delete( p )
+                                                                    (client, service) -> wrapAsyncCall( client.delete( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
                                                                                                    .send() ) ) );
@@ -144,7 +145,7 @@ public class ProxyService
             {
                 backOff = DEFAULT_BACKOFF_MILLIS;
             }
-            ret = ret.onFailure( t -> (t instanceof IOException || t instanceof VertxException ) )
+            ret = ret.onFailure( t -> ( t instanceof IOException || t instanceof VertxException ) )
                .retry()
                .withBackOff( Duration.ofMillis( backOff ) )
                .atMost( retry.count );

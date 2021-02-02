@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import static io.restassured.RestAssured.given;
-import static org.commonjava.util.gateway.fixture.TestResources.LARGE_JAR_PATH;
+import static org.commonjava.util.gateway.fixture.TestResources.LARGE_FILE_PATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.anyOf;
 
@@ -24,7 +24,7 @@ public class LargeFileTest
     {
         given().when()
                .body( getBytes( SIZE_20 ) )
-               .post( LARGE_JAR_PATH )
+               .post( LARGE_FILE_PATH )
                .then()
                .statusCode( anyOf( is( 201 ), is( 204 ) ) );
     }
@@ -34,7 +34,7 @@ public class LargeFileTest
     {
         given().when()
                .body( getBytes( SIZE_20 ) )
-               .put( LARGE_JAR_PATH )
+               .put( LARGE_FILE_PATH )
                .then()
                .statusCode( anyOf( is( 201 ), is( 204 ) ) );
     }
