@@ -8,6 +8,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.apache.commons.io.IOUtils;
+import org.commonjava.util.gateway.cache.CacheHandler;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.interceptor.ExceptionHandler;
 import org.commonjava.util.gateway.interceptor.MetricsHandler;
@@ -32,7 +33,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
-import static org.commonjava.util.gateway.util.CacheUtils.wrapWithCache;
 
 @ApplicationScoped
 @MetricsHandler
@@ -52,6 +52,9 @@ public class ProxyService
 
     @Inject
     Classifier classifier;
+
+    @Inject
+    CacheHandler cacheHandler;
 
     @PostConstruct
     void init()
@@ -97,7 +100,8 @@ public class ProxyService
     public Uni<Response> doGet( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
-                                                                    (client, service) -> wrapWithCache( wrapAsyncCall( client.get( p )
+                                                                    (client, service) ->
+                                                                                    cacheHandler.wrapWithCache( wrapAsyncCall( client.get( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
                                                                                                    .send()), p, service ) ) );
