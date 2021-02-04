@@ -2,12 +2,13 @@ package org.commonjava.util.gateway.cache;
 
 import io.smallrye.mutiny.Uni;
 import org.apache.commons.io.FileUtils;
+import org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy;
+import org.commonjava.util.gateway.cache.strategy.PrefixTrimCacheStrategy;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -29,15 +30,19 @@ public class CacheHandler
 {
     private final Logger logger = LoggerFactory.getLogger( CacheHandler.class );
 
-    @Inject
-    CacheStrategy cacheStrategy;
-
-    public Uni<Response> wrapWithCache( Uni<Response> uni, String path,
-                                               ProxyConfiguration.ServiceConfig service )
+    public Uni<Response> wrapWithCache( Uni<Response> uni, String path, ProxyConfiguration.ServiceConfig service )
     {
-        if ( cacheStrategy.isCache( service.cache, path ) )
+        ProxyConfiguration.Cache cache = service.cache;
+        if ( cache == null )
         {
-            File cached = cacheStrategy.getCachedFile( service.cache, path );
+            logger.trace( "No cache defined" );
+            return uni;
+        }
+
+        CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
+        if ( cacheStrategy.isCache( cache, path ) )
+        {
+            File cached = cacheStrategy.getCachedFile( cache, path );
             String absolutePath = cached.getAbsolutePath();
             logger.trace( "Search cache, file: {}", absolutePath );
             if ( cached.exists() )
@@ -46,7 +51,7 @@ public class CacheHandler
                 Uni<Response> ret = null;
                 try
                 {
-                    ret = renderCachedFile( service.cache, cached );
+                    ret = renderCachedFile( cache, cached );
                 }
                 catch ( IOException e )
                 {
@@ -59,16 +64,28 @@ public class CacheHandler
             }
         }
 
-        if ( cacheStrategy.isCacheForWrite( service.cache, path ) )
+        if ( cacheStrategy.isCacheForWrite( cache, path ) )
         {
             uni = uni.onItem().invoke( resp -> {
                 if ( resp.getStatus() == OK.getStatusCode() )
                 {
-                    writeToCache( resp, service.cache, path );
+                    writeToCache( resp, cache, path );
                 }
             } );
         }
         return uni;
+    }
+
+    private CacheStrategy getCacheStrategy( String strategy )
+    {
+        if ( isNotBlank( strategy ) )
+        {
+            if ( PrefixTrimCacheStrategy.class.getName().contains( strategy ) )
+            {
+                return PrefixTrimCacheStrategy.INSTANCE;
+            }
+        }
+        return DefaultCacheStrategy.INSTANCE;
     }
 
     private Uni<Response> renderCachedFile( ProxyConfiguration.Cache cache, File cached ) throws IOException
@@ -115,6 +132,8 @@ public class CacheHandler
 
     private void writeToCache( Response resp, ProxyConfiguration.Cache cache, String path )
     {
+        CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
+
         File f = cacheStrategy.getCachedFile( cache, path );
         File metadata = getMetadataFile( f );
 

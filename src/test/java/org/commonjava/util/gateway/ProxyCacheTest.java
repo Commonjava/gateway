@@ -16,7 +16,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static io.restassured.RestAssured.given;
 import static java.lang.Thread.sleep;
-import static org.commonjava.util.gateway.cache.DefaultCacheStrategy.DEFAULT_CACHE_DIR;
+import static org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy.DEFAULT_CACHE_DIR;
 import static org.commonjava.util.gateway.fixture.TestResources.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -246,17 +247,20 @@ public class ProxyConfiguration
     {
         public boolean enabled;
 
-        // true if only read from pre-seed cache, or write to cache for each successful GET request
+        // True if only read from pre-seed cache, or write to cache for each successful GET request
         public boolean readonly;
 
-        // only files match the pattern are cached, null for all files
+        // Only files match the pattern are cached, null for all files
         public String pattern;
 
-        // expiration in PnDTnHnMn, as parsed by java.time.Duration
+        // Expiration in PnDTnHnMn, as parsed by java.time.Duration
         public String expire;
 
-        // cache dir, default ${runtime_root}/cache
+        // Cache dir, default ${runtime_root}/cache
         public String dir;
+
+        // Cache strategy class name, e.g, PrefixTrimCacheStrategy (or simply PrefixTrim). If not set, use default.
+        public String strategy;
 
         private void normalize()
         {
@@ -274,14 +278,18 @@ public class ProxyConfiguration
                 }
                 expireInSeconds = Duration.parse( prefix + expire ).getSeconds();
             }
+            if ( isNotBlank( pattern ) )
+            {
+                compiledPattern = Pattern.compile( pattern );
+            }
         }
 
         @Override
         public String toString()
         {
             return "Cache{" + "enabled=" + enabled + ", readonly=" + readonly + ", pattern='" + pattern + '\''
-                            + ", expire='" + expire + '\'' + ", dir='" + dir + '\'' + ", expireInSeconds="
-                            + expireInSeconds + '}';
+                            + ", expire='" + expire + '\'' + ", dir='" + dir + '\'' + ", strategy='" + strategy + '\''
+                            + ", expireInSeconds=" + expireInSeconds + '}';
         }
 
         private transient long expireInSeconds;
@@ -289,6 +297,13 @@ public class ProxyConfiguration
         public long getExpireInSeconds()
         {
             return expireInSeconds;
+        }
+
+        private transient Pattern compiledPattern;
+
+        public Pattern getCompiledPattern()
+        {
+            return compiledPattern;
         }
     }
 }
