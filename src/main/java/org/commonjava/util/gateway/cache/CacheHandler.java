@@ -1,11 +1,14 @@
-package org.commonjava.util.gateway.util;
+package org.commonjava.util.gateway.cache;
 
 import io.smallrye.mutiny.Uni;
 import org.apache.commons.io.FileUtils;
+import org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy;
+import org.commonjava.util.gateway.cache.strategy.PrefixTrimCacheStrategy;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -21,20 +24,25 @@ import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.Charset.defaultCharset;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.commonjava.util.gateway.config.ProxyConfiguration.USER_DIR;
 
-public class CacheUtils
+@ApplicationScoped
+public class CacheHandler
 {
-    private static final Logger logger = LoggerFactory.getLogger( CacheUtils.class );
+    private final Logger logger = LoggerFactory.getLogger( CacheHandler.class );
 
-    public static final File DEFAULT_CACHE_DIR = new File( USER_DIR, "cache" );
-
-    public static Uni<Response> wrapWithCache( Uni<Response> uni, String path,
-                                               ProxyConfiguration.ServiceConfig service )
+    public Uni<Response> wrapWithCache( Uni<Response> uni, String path, ProxyConfiguration.ServiceConfig service )
     {
-        if ( isCache( service.cache, path ) )
+        ProxyConfiguration.Cache cache = service.cache;
+        if ( cache == null )
         {
-            File cached = getCachedFile( service.cache, path );
+            logger.trace( "No cache defined" );
+            return uni;
+        }
+
+        CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
+        if ( cacheStrategy.isCache( cache, path ) )
+        {
+            File cached = cacheStrategy.getCachedFile( cache, path );
             String absolutePath = cached.getAbsolutePath();
             logger.trace( "Search cache, file: {}", absolutePath );
             if ( cached.exists() )
@@ -43,7 +51,7 @@ public class CacheUtils
                 Uni<Response> ret = null;
                 try
                 {
-                    ret = renderCachedFile( service.cache, cached );
+                    ret = renderCachedFile( cache, cached );
                 }
                 catch ( IOException e )
                 {
@@ -56,19 +64,31 @@ public class CacheUtils
             }
         }
 
-        if ( isCacheForWrite( service.cache, path ) )
+        if ( cacheStrategy.isCacheForWrite( cache, path ) )
         {
             uni = uni.onItem().invoke( resp -> {
                 if ( resp.getStatus() == OK.getStatusCode() )
                 {
-                    writeToCache( resp, service.cache, path );
+                    writeToCache( resp, cache, path );
                 }
             } );
         }
         return uni;
     }
 
-    private static Uni<Response> renderCachedFile( ProxyConfiguration.Cache cache, File cached ) throws IOException
+    private CacheStrategy getCacheStrategy( String strategy )
+    {
+        if ( isNotBlank( strategy ) )
+        {
+            if ( PrefixTrimCacheStrategy.class.getName().contains( strategy ) )
+            {
+                return PrefixTrimCacheStrategy.INSTANCE;
+            }
+        }
+        return DefaultCacheStrategy.INSTANCE;
+    }
+
+    private Uni<Response> renderCachedFile( ProxyConfiguration.Cache cache, File cached ) throws IOException
     {
         long expire = cache.getExpireInSeconds();
         if ( expire > 0 )
@@ -110,9 +130,11 @@ public class CacheUtils
 
     private static final Charset DEFAULT_CHARSET = defaultCharset();
 
-    private static void writeToCache( Response resp, ProxyConfiguration.Cache cache, String path )
+    private void writeToCache( Response resp, ProxyConfiguration.Cache cache, String path )
     {
-        File f = getCachedFile( cache, path );
+        CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
+
+        File f = cacheStrategy.getCachedFile( cache, path );
         File metadata = getMetadataFile( f );
 
         logger.debug( "Write to file: {}", f );
@@ -150,39 +172,5 @@ public class CacheUtils
         return sb.toString();
     }
 
-    private static File getCachedFile( ProxyConfiguration.Cache cache, String path )
-    {
-        File f;
-        if ( isNotBlank( cache.dir ) )
-        {
-            f = new File( cache.dir, path );
-        }
-        else
-        {
-            f = new File( DEFAULT_CACHE_DIR, path );
-        }
-        return f;
-    }
-
-    private static boolean isCache( ProxyConfiguration.Cache cache, String path )
-    {
-        if ( cache != null && cache.enabled && path.matches( cache.pattern ) )
-        {
-            logger.trace( "Cache matches (read): {}", path );
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean isCacheForWrite( ProxyConfiguration.Cache cache, String path )
-    {
-        if ( cache != null && cache.enabled && !cache.readonly && path.matches( cache.pattern ) )
-        {
-            logger.trace( "Cache matches (write): {}", path );
-            return true;
-
-        }
-        return false;
-    }
 
 }
