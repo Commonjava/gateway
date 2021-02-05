@@ -111,20 +111,25 @@ public class CacheHandler
         return renderFile( cached );
     }
 
-    private static Uni<Response> renderFile( File cached ) throws IOException
+    private Uni<Response> renderFile( File cached ) throws IOException
     {
+        logger.debug( "Render file, {}", cached.getPath() );
         Response.ResponseBuilder resp = Response.ok( cached );
-        List<String> lines = FileUtils.readLines( getMetadataFile( cached ), DEFAULT_CHARSET );
-        lines.forEach( line -> {
-            if ( isNotBlank( line ) )
-            {
-                String[] header = line.split( "=" );
-                if ( header.length >= 2 )
+        File httpMetadata = getMetadataFile( cached );
+        if ( httpMetadata.exists() )
+        {
+            List<String> lines = FileUtils.readLines( httpMetadata, DEFAULT_CHARSET );
+            lines.forEach( line -> {
+                if ( isNotBlank( line ) )
                 {
-                    resp.header( header[0], header[1] );
+                    String[] header = line.split( "=" );
+                    if ( header.length >= 2 )
+                    {
+                        resp.header( header[0], header[1] );
+                    }
                 }
-            }
-        } );
+            } );
+        }
         return Uni.createFrom().item( resp.build() );
     }
 

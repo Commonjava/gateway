@@ -13,3 +13,4 @@ proxy:
         readonly: false
         pattern: ".+\\.(pom|jar)(\\.(md5|sha.+))?$" # only cache concrete files, not metadata
         expire: 2h
+        dir: /tmp/gateway-cache
