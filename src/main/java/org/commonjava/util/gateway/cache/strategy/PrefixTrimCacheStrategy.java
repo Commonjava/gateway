@@ -29,7 +29,7 @@ public class PrefixTrimCacheStrategy
             if ( index >= 0 )
             {
                 path = path.substring( index + pathPrefix.length() );
-                logger.debug( "Trim path prefix before caching, trimmed: {}", path );
+                logger.debug( "Trim path prefix, trimmed: {}", path );
             }
         }
         return super.getCachedFile( cache, path );
