@@ -12,6 +12,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path( "/proxy" )
 public class AdminResource
@@ -33,6 +34,14 @@ public class AdminResource
     public Uni<JsonObject> getProxyInfo( final @Context HttpServerRequest request )
     {
         return adminService.getProxyInfo();
+    }
+
+    @GET
+    @Produces( TEXT_PLAIN )
+    @Path( "/threads" )
+    public Uni<String> getThreadDump( final @Context HttpServerRequest request )
+    {
+        return adminService.getThreadDumpString();
     }
 
 }
