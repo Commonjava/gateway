@@ -5,7 +5,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.apache.commons.io.IOUtils;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.http.HttpVersion.HTTP_2;
 import static io.vertx.core.http.impl.HttpUtils.normalizePath;
 import static javax.ws.rs.core.HttpHeaders.HOST;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -178,9 +176,8 @@ public class ProxyService
         logger.debug( "Proxy resp: {} {}", resp.statusCode(), resp.statusMessage() );
         logger.trace( "Raw resp headers:\n{}", resp.headers() );
         Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
-
         resp.headers().forEach( header -> {
-            if ( respHeaderAllowed( header, resp.version() ) )
+            if ( respHeaderAllowed( header ) )
             {
                 builder.header( header.getKey(), header.getValue() );
             }
@@ -196,14 +193,10 @@ public class ProxyService
     /**
      * Raw content-length/connection header breaks http2 protocol. It is safe to exclude them.
      */
-    private boolean respHeaderAllowed( Map.Entry<String, String> header, HttpVersion httpVersion )
+    private boolean respHeaderAllowed( Map.Entry<String, String> header )
     {
-        if ( httpVersion == HTTP_2 )
-        {
-            String key = header.getKey();
-            return !( key.equalsIgnoreCase( "content-length" ) || key.equalsIgnoreCase( "connection" ) );
-        }
-        return true;
+        String key = header.getKey();
+        return !( key.equalsIgnoreCase( "content-length" ) || key.equalsIgnoreCase( "connection" ) );
     }
 
     private io.vertx.mutiny.core.MultiMap getHeaders( HttpServerRequest request )
