@@ -4,6 +4,7 @@ import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.http.HttpMethod.HEAD;
 import static io.vertx.core.http.impl.HttpUtils.normalizePath;
 import static javax.ws.rs.core.HttpHeaders.HOST;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -94,7 +96,7 @@ public class ProxyService
                                                                     (client, service) -> wrapAsyncCall( client.head( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .send() ) ) );
+                                                                                                   .send(), request.method() ) ) );
     }
 
     public Uni<Response> doGet( String path, HttpServerRequest request ) throws Exception
@@ -104,7 +106,7 @@ public class ProxyService
                                                                                     cacheHandler.wrapWithCache( wrapAsyncCall( client.get( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .send()), p, service ) ) );
+                                                                                                   .send(), request.method() ), p, service ) ) );
     }
 
     public Uni<Response> doPost( String path, InputStream is, HttpServerRequest request ) throws Exception
@@ -115,7 +117,7 @@ public class ProxyService
                                                                     (client, service) -> wrapAsyncCall( client.post( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .sendBuffer( buf ) ) ) );
+                                                                                                   .sendBuffer( buf ), request.method() ) ) );
     }
 
     public Uni<Response> doPut( String path, InputStream is, HttpServerRequest request ) throws Exception
@@ -126,7 +128,7 @@ public class ProxyService
                                                                     (client, service) -> wrapAsyncCall( client.put( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .sendBuffer( buf ) ) ) );
+                                                                                                   .sendBuffer( buf ), request.method() ) ) );
     }
 
     public Uni<Response> doDelete( String path, HttpServerRequest request ) throws Exception
@@ -135,13 +137,13 @@ public class ProxyService
                                                                     (client, service) -> wrapAsyncCall( client.delete( p )
                                                                                                    .putHeaders( getHeaders( request ) )
                                                                                                    .timeout( timeout )
-                                                                                                   .send() ) ) );
+                                                                                                   .send(), request.method() ) ) );
     }
 
-    private Uni<Response> wrapAsyncCall( Uni<HttpResponse<Buffer>> asyncCall )
+    private Uni<Response> wrapAsyncCall( Uni<HttpResponse<Buffer>> asyncCall, HttpMethod method )
     {
         ProxyConfiguration.Retry retry = proxyConfiguration.getRetry();
-        Uni<Response> ret = asyncCall.onItem().transform( this::convertProxyResp );
+        Uni<Response> ret = asyncCall.onItem().transform( ( HttpResponse<Buffer> resp ) -> convertProxyResp( resp, method ) );
         if ( retry.count > 0 )
         {
             long backOff = retry.interval;
@@ -170,14 +172,15 @@ public class ProxyService
     /**
      * Read status and headers from proxy resp and set them to direct response.
      * @param resp proxy resp
+     * @param method request method
      */
-    private Response convertProxyResp( HttpResponse<Buffer> resp )
+    private Response convertProxyResp( HttpResponse<Buffer> resp, HttpMethod method )
     {
         logger.debug( "Proxy resp: {} {}", resp.statusCode(), resp.statusMessage() );
         logger.trace( "Raw resp headers:\n{}", resp.headers() );
         Response.ResponseBuilder builder = Response.status( resp.statusCode(), resp.statusMessage() );
         resp.headers().forEach( header -> {
-            if ( respHeaderAllowed( header ) )
+            if ( isHeaderAllowed( header, method ) )
             {
                 builder.header( header.getKey(), header.getValue() );
             }
@@ -191,10 +194,15 @@ public class ProxyService
     }
 
     /**
-     * Raw content-length/connection header breaks http2 protocol. It is safe to exclude them.
+     * Raw content-length/connection header breaks http2 protocol. Exclude them and let lower layer regenerate it.
+     * Allow all headers when it is HEAD request.
      */
-    private boolean respHeaderAllowed( Map.Entry<String, String> header )
+    private boolean isHeaderAllowed( Map.Entry<String, String> header, HttpMethod method )
     {
+        if ( method == HEAD )
+        {
+            return true;
+        }
         String key = header.getKey();
         return !( key.equalsIgnoreCase( "content-length" ) || key.equalsIgnoreCase( "connection" ) );
     }
