@@ -22,6 +22,8 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +48,8 @@ public class ProxyService
     private long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis( 30 ); // default 30 minutes
 
     private long DEFAULT_BACKOFF_MILLIS = Duration.ofSeconds( 5 ).toMillis();
+
+    private final String PROXY_ORIGIN = "proxy-origin";
 
     private volatile long timeout;
 
@@ -213,6 +217,21 @@ public class ProxyService
         io.vertx.mutiny.core.MultiMap ret = io.vertx.mutiny.core.MultiMap.newInstance( headers )
                                                                          .remove( HOST )
                                                                          .add( TRACE_ID, getTraceId( headers ) );
+        if ( headers.get( PROXY_ORIGIN ) == null )
+        {
+            try
+            {
+                URL url = new URL( request.absoluteURI() );
+                String protocol = url.getProtocol();
+                String authority = url.getAuthority();
+                ret.add( PROXY_ORIGIN, String.format( "%s://%s", protocol, authority ) );
+            }
+            catch ( MalformedURLException e )
+            {
+                logger.error( "Failed to parse URI", e ); // shouldn't happen
+            }
+        }
+
         logger.trace( "Req headers:\n{}", ret );
         return ret;
     }
