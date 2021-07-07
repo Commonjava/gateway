@@ -13,6 +13,7 @@ import org.commonjava.util.gateway.cache.CacheHandler;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.interceptor.ExceptionHandler;
 import org.commonjava.util.gateway.interceptor.MetricsHandler;
+import org.eclipse.microprofile.opentracing.Traced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,7 @@ import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CO
 
 @ApplicationScoped
 @MetricsHandler
+@Traced
 @ExceptionHandler
 public class ProxyService
 {

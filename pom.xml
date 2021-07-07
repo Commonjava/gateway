@@ -37,6 +37,7 @@
         <quarkus.platform.version>1.9.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <o11phant.version>1.3</o11phant.version>
+        <opentracing.version>1.13.3.Final</opentracing.version>
     </properties>
 
     <dependencyManagement>
@@ -87,6 +88,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-opentracing</artifactId>
+            <version>${opentracing.version}</version>
         </dependency>
 
         <!-- Test -->
