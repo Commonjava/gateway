@@ -37,6 +37,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
+import static org.commonjava.util.gateway.services.ProxyConstants.FORBIDDEN_HEADERS;
 
 @ApplicationScoped
 @MetricsHandler
@@ -208,7 +209,7 @@ public class ProxyService
             return true;
         }
         String key = header.getKey();
-        return !( key.equalsIgnoreCase( "content-length" ) || key.equalsIgnoreCase( "connection" ) );
+        return !FORBIDDEN_HEADERS.contains( key.toLowerCase() );
     }
 
     private io.vertx.mutiny.core.MultiMap getHeaders( HttpServerRequest request )
