@@ -38,6 +38,8 @@ import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_
 import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
 import static org.commonjava.util.gateway.services.ProxyConstants.FORBIDDEN_HEADERS;
+import static org.commonjava.util.gateway.util.ServiceUtils.getTimeout;
+import static org.commonjava.util.gateway.util.ServiceUtils.parseTimeout;
 
 @ApplicationScoped
 @MetricsHandler
@@ -46,7 +48,7 @@ public class ProxyService
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis( 30 ); // default 30 minutes
+    private static long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis( 5 );
 
     private long DEFAULT_BACKOFF_MILLIS = Duration.ofSeconds( 5 ).toMillis();
 
@@ -78,7 +80,7 @@ public class ProxyService
         {
             try
             {
-                t = Duration.parse( "pt" + readTimeout ).toMillis();
+                t = parseTimeout( readTimeout );
             }
             catch ( Exception e )
             {
@@ -100,7 +102,7 @@ public class ProxyService
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
                                                                     (client, service) -> wrapAsyncCall( client.head( p )
                                                                                                    .putHeaders( getHeaders( request ) )
-                                                                                                   .timeout( timeout )
+                                                                                                   .timeout( getTimeout( service, p, timeout ) )
                                                                                                    .send(), request.method() ) ) );
     }
 
@@ -110,7 +112,7 @@ public class ProxyService
                                                                     (client, service) ->
                                                                                     cacheHandler.wrapWithCache( wrapAsyncCall( client.get( p )
                                                                                                    .putHeaders( getHeaders( request ) )
-                                                                                                   .timeout( timeout )
+                                                                                                   .timeout( getTimeout( service, p, timeout ) )
                                                                                                    .send(), request.method() ), p, service ) ) );
     }
 
@@ -121,7 +123,7 @@ public class ProxyService
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
                                                                     (client, service) -> wrapAsyncCall( client.post( p )
                                                                                                    .putHeaders( getHeaders( request ) )
-                                                                                                   .timeout( timeout )
+                                                                                                   .timeout( getTimeout( service, p, timeout ) )
                                                                                                    .sendBuffer( buf ), request.method() ) ) );
     }
 
@@ -132,7 +134,7 @@ public class ProxyService
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
                                                                     (client, service) -> wrapAsyncCall( client.put( p )
                                                                                                    .putHeaders( getHeaders( request ) )
-                                                                                                   .timeout( timeout )
+                                                                                                   .timeout( getTimeout( service, p, timeout ) )
                                                                                                    .sendBuffer( buf ), request.method() ) ) );
     }
 
@@ -141,7 +143,7 @@ public class ProxyService
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
                                                                     (client, service) -> wrapAsyncCall( client.delete( p )
                                                                                                    .putHeaders( getHeaders( request ) )
-                                                                                                   .timeout( timeout )
+                                                                                                   .timeout( getTimeout( service, p, timeout ) )
                                                                                                    .send(), request.method() ) ) );
     }
 

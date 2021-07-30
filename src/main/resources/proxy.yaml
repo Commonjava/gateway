@@ -1,5 +1,5 @@
 proxy:
-  read-timeout: 30m
+  read-timeout: 5m
   retry:
     count: 3
     interval: 3000
