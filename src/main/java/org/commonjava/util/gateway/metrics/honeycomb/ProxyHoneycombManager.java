@@ -1,6 +1,7 @@
 package org.commonjava.util.gateway.metrics.honeycomb;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.net.SocketAddress;
 import org.commonjava.o11yphant.honeycomb.HoneycombManager;
 import org.commonjava.o11yphant.honeycomb.SimpleTraceSampler;
 import org.commonjava.util.gateway.config.ProxyHoneycombConfiguration;
@@ -68,7 +69,11 @@ public class ProxyHoneycombManager
                 ret = request.getHeader( EXTERNAL_ID );
                 break;
             case CLIENT_ADDR:
-                ret = request.remoteAddress().host();
+                SocketAddress remoteAddr = request.remoteAddress();
+                if ( remoteAddr != null )
+                {
+                    ret = remoteAddr.host();
+                }
                 break;
             case REST_ENDPOINT_PATH:
                 ret = request.path();
