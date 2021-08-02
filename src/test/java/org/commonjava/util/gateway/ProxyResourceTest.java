@@ -106,6 +106,15 @@ public class ProxyResourceTest
     }
 
     @Test
+    public void testPromote()
+    {
+        given().when()
+               .post( PROMOTE_PATH )
+               .then()
+               .statusCode( is( 200 ) );
+    }
+
+    @Test
     public void testProxyTimeout()
     {
         given().when()

@@ -1,5 +1,6 @@
 package org.commonjava.util.gateway.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.Startup;
 import io.vertx.mutiny.core.eventbus.EventBus;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +31,7 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
+import static org.commonjava.util.gateway.util.ServiceUtils.parseTimeout;
 
 @Startup
 @ApplicationScoped
@@ -192,6 +195,17 @@ public class ProxyConfiguration
         @JsonProperty( "path-pattern" )
         public String pathPattern;
 
+        @JsonProperty( "read-timeout-patterns" )
+        public String readTimeoutPatterns;
+
+        @JsonIgnore
+        private Map<Pattern, Long> timeoutMap = new HashMap<>();
+
+        public Map<Pattern, Long> getTimeoutMap()
+        {
+            return timeoutMap;
+        }
+
         @Override
         public boolean equals( Object o )
         {
@@ -213,7 +227,8 @@ public class ProxyConfiguration
         public String toString()
         {
             return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", ssl=" + ssl + ", methods='"
-                            + methods + '\'' + ", cache=" + cache + ", pathPattern='" + pathPattern + '\'' + '}';
+                            + methods + '\'' + ", cache=" + cache + ", pathPattern='" + pathPattern + '\''
+                            + ", readTimeoutPatterns='" + readTimeoutPatterns + '\'' + '}';
         }
 
         private void normalize()
@@ -225,6 +240,23 @@ public class ProxyConfiguration
             if ( cache != null )
             {
                 cache.normalize();
+            }
+            if ( readTimeoutPatterns != null )
+            {
+                final Logger logger = LoggerFactory.getLogger( getClass() );
+                for ( String s : readTimeoutPatterns.split( "," ) )
+                {
+                    if ( isNotBlank( s ) )
+                    {
+                        String[] kv = s.split( "\\|" );
+                        String key = kv[0].trim();
+                        String val = kv[1].trim();
+                        Pattern pattern = Pattern.compile( key );
+                        long t = parseTimeout( val );
+                        timeoutMap.put( pattern, t );
+                        logger.trace( "Add patterned timeout, pattern: {}, timeoutInMillis: {}", key, t );
+                    }
+                }
             }
         }
     }

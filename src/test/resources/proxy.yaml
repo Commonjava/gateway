@@ -7,7 +7,8 @@ proxy:
   services:
     - host: localhost
       port: 9090
-      path-pattern: "/api/(content|admin|promote)/.+"
+      path-pattern: "/api/(content|admin|promote|other).*"
+      read-timeout-patterns: ".+/promote|2s"
       cache:
         enabled: true
         readonly: false

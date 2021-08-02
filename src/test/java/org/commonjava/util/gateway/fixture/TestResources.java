@@ -66,7 +66,9 @@ public class TestResources
 
     public static final String POST_PATH = "/api/admin/stores/maven/hosted";
 
-    public static final String PROMOTE_TIMEOUT_PATH = "/api/promote/something/really/big";
+    public static final String PROMOTE_TIMEOUT_PATH = "/api/other/really/big/promote";
+
+    public static final String PROMOTE_PATH = "/api/promote";
 
     public static final String EXCEPTION_PATH = "/api/content/maven/hosted/local-deployments/exception";
 
@@ -103,6 +105,8 @@ public class TestResources
         wireMockServer.stubFor( put( LARGE_FILE_PATH ).willReturn( aResponse().withStatus( 201 ) ) );
 
         wireMockServer.stubFor( post( LARGE_FILE_PATH ).willReturn( aResponse().withStatus( 201 ) ));
+
+        wireMockServer.stubFor( post( PROMOTE_PATH ).willReturn( aResponse().withFixedDelay( 1500 ).withStatus( 200 ) ) );
 
         wireMockServer.stubFor( post( PROMOTE_TIMEOUT_PATH ).willReturn( aResponse().withFixedDelay( 3000 ).withStatus( 200 ) ) );
 
