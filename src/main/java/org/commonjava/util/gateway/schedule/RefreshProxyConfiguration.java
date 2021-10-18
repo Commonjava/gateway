@@ -1,11 +1,10 @@
 package org.commonjava.util.gateway.schedule;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import io.quarkus.scheduler.Scheduled;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped

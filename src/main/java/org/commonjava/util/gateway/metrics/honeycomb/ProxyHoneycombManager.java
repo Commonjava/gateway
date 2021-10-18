@@ -13,7 +13,13 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 
-import static org.commonjava.o11yphant.metrics.RequestContextConstants.*;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.CLIENT_ADDR;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.HTTP_METHOD;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.HTTP_STATUS;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.REQUEST_LATENCY_MILLIS;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.REST_ENDPOINT_PATH;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 import static org.commonjava.util.gateway.config.ProxyHoneycombConfiguration.ERROR_CLASS;
 import static org.commonjava.util.gateway.config.ProxyHoneycombConfiguration.ERROR_MESSAGE;
 
@@ -60,7 +66,7 @@ public class ProxyHoneycombManager
         switch ( field )
         {
             case HTTP_METHOD:
-                ret = request.rawMethod();
+                ret = request.method();
                 break;
             case HTTP_STATUS:
                 ret = ( resp != null ? resp.getStatus() : null );

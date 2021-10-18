@@ -1,17 +1,16 @@
 package org.commonjava.util.gateway.metrics.jfr;
 
-import java.io.IOException;
+import org.commonjava.util.gateway.metrics.jfr.events.JaxRSEvent;
+import org.jboss.resteasy.core.ResourceMethodInvoker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
-
-import org.commonjava.util.gateway.metrics.jfr.events.JaxRSEvent;
-import org.jboss.resteasy.core.ResourceMethodInvoker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 /**
  * Purpose of this filter is to generate events for JaxRS calls when profiling is enabled.

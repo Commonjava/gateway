@@ -8,7 +8,7 @@ import org.eclipse.microprofile.health.Liveness;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Optional;
 
-import static org.eclipse.microprofile.health.HealthCheckResponse.State.UP;
+import static org.eclipse.microprofile.health.HealthCheckResponse.Status.UP;
 
 @Liveness
 @ApplicationScoped

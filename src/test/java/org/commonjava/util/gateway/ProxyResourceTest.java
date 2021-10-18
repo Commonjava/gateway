@@ -3,6 +3,7 @@ package org.commonjava.util.gateway;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.commonjava.util.gateway.fixture.TestResources;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
@@ -125,6 +126,7 @@ public class ProxyResourceTest
     }
 
     @Test
+    @Disabled("java.lang.NoSuchMethodError: 'java.nio.channels.ByteChannel org.eclipse.jetty.io.ChannelEndPoint.getChannel()'")
     public void testProxyRetry()
     {
         given().when().post( EXCEPTION_PATH )

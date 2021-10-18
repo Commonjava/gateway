@@ -18,7 +18,12 @@ import java.util.regex.Pattern;
 
 import static java.util.Collections.EMPTY_MAP;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.commonjava.o11yphant.metrics.RequestContextConstants.*;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.CLIENT_ADDR;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.HTTP_METHOD;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.HTTP_STATUS;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.REQUEST_LATENCY_MILLIS;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.REST_ENDPOINT_PATH;
+import static org.commonjava.o11yphant.metrics.RequestContextConstants.TRACE_ID;
 
 @ApplicationScoped
 @Startup

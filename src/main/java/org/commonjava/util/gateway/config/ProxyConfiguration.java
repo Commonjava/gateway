@@ -1,10 +1,9 @@
 package org.commonjava.util.gateway.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.runtime.Startup;
-import io.vertx.mutiny.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mutiny.core.eventbus.EventBus;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -19,19 +18,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.commonjava.util.gateway.services.ProxyConstants.EVENT_PROXY_CONFIG_CHANGE;
-import static org.commonjava.util.gateway.util.ServiceUtils.parseTimeout;
 
 @Startup
 @ApplicationScoped
@@ -116,15 +109,15 @@ public class ProxyConfiguration
         }
     }
 
-    private transient String md5Hex; // used to check whether the custom proxy.yaml has changed
+    private transient String stateHash; // used to check whether the custom proxy.yaml has changed
 
     private void doLoad( InputStream res )
     {
         try
         {
             String str = IOUtils.toString( res, UTF_8 );
-            String md5 = DigestUtils.md5Hex( str ).toUpperCase();
-            if ( md5.equals( md5Hex ) )
+            String nextStateHash = DigestUtils.sha256Hex( str ).toUpperCase();
+            if ( nextStateHash.equals( stateHash ) )
             {
                 logger.info( "Skip, NO_CHANGE" );
                 return;
@@ -147,12 +140,12 @@ public class ProxyConfiguration
                 } );
             }
 
-            if ( md5Hex != null )
+            if ( stateHash != null )
             {
                 bus.publish( EVENT_PROXY_CONFIG_CHANGE, "" );
             }
 
-            md5Hex = md5;
+            stateHash = nextStateHash;
         }
         catch ( IOException e )
         {
@@ -172,93 +165,12 @@ public class ProxyConfiguration
         Map<String, Object> obj = yaml.load( str );
         Map<String, Object> proxy = (Map) obj.get( "proxy" );
         JsonObject jsonObject = JsonObject.mapFrom( proxy );
-        ProxyConfiguration ret = jsonObject.mapTo( this.getClass() );
+        ProxyConfiguration ret = jsonObject.mapTo( ProxyConfiguration.class );
         if ( ret.services != null )
         {
             ret.services.forEach( sv -> sv.normalize() );
         }
         return ret;
-    }
-
-    public static class ServiceConfig
-    {
-        public String host;
-
-        public int port;
-
-        public boolean ssl;
-
-        public String methods;
-
-        public Cache cache;
-
-        @JsonProperty( "path-pattern" )
-        public String pathPattern;
-
-        @JsonProperty( "read-timeout-patterns" )
-        public String readTimeoutPatterns;
-
-        @JsonIgnore
-        private Map<Pattern, Long> timeoutMap = new HashMap<>();
-
-        public Map<Pattern, Long> getTimeoutMap()
-        {
-            return timeoutMap;
-        }
-
-        @Override
-        public boolean equals( Object o )
-        {
-            if ( this == o )
-                return true;
-            if ( o == null || getClass() != o.getClass() )
-                return false;
-            ServiceConfig that = (ServiceConfig) o;
-            return Objects.equals( methods, that.methods ) && pathPattern.equals( that.pathPattern );
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash( methods, pathPattern );
-        }
-
-        @Override
-        public String toString()
-        {
-            return "ServiceConfig{" + "host='" + host + '\'' + ", port=" + port + ", ssl=" + ssl + ", methods='"
-                            + methods + '\'' + ", cache=" + cache + ", pathPattern='" + pathPattern + '\''
-                            + ", readTimeoutPatterns='" + readTimeoutPatterns + '\'' + '}';
-        }
-
-        private void normalize()
-        {
-            if ( methods != null )
-            {
-                methods = methods.toUpperCase();
-            }
-            if ( cache != null )
-            {
-                cache.normalize();
-            }
-            if ( readTimeoutPatterns != null )
-            {
-                final Logger logger = LoggerFactory.getLogger( getClass() );
-                for ( String s : readTimeoutPatterns.split( "," ) )
-                {
-                    if ( isNotBlank( s ) )
-                    {
-                        String[] kv = s.split( "\\|" );
-                        String key = kv[0].trim();
-                        String val = kv[1].trim();
-                        Pattern pattern = Pattern.compile( key );
-                        long t = parseTimeout( val );
-                        timeoutMap.put( pattern, t );
-                        logger.trace( "Add patterned timeout, pattern: {}, timeoutInMillis: {}", key, t );
-                    }
-                }
-            }
-        }
     }
 
     public static class Retry
@@ -275,67 +187,4 @@ public class ProxyConfiguration
 
     }
 
-    public static class Cache
-    {
-        public boolean enabled;
-
-        // True if only read from pre-seed cache, or write to cache for each successful GET request
-        public boolean readonly;
-
-        // Only files match the pattern are cached, null for all files
-        public String pattern;
-
-        // Expiration in PnDTnHnMn, as parsed by java.time.Duration
-        public String expire;
-
-        // Cache dir, default ${runtime_root}/cache
-        public String dir;
-
-        // Cache strategy class name, e.g, PrefixTrimCacheStrategy (or simply PrefixTrim). If not set, use default.
-        public String strategy;
-
-        private void normalize()
-        {
-            if ( isNotBlank( expire ) )
-            {
-                String ls = expire.toLowerCase();
-                String prefix;
-                if ( ls.contains( "d" ) )
-                {
-                    prefix = "P";
-                }
-                else
-                {
-                    prefix = "PT";
-                }
-                expireInSeconds = Duration.parse( prefix + expire ).getSeconds();
-            }
-            if ( isNotBlank( pattern ) )
-            {
-                compiledPattern = Pattern.compile( pattern );
-            }
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Cache{" + "enabled=" + enabled + ", readonly=" + readonly + ", pattern='" + pattern + '\''
-                            + ", expire='" + expire + '\'' + ", dir='" + dir + '\'' + ", strategy='" + strategy + '\''
-                            + ", expireInSeconds=" + expireInSeconds + '}';
-        }
-
-        private transient long expireInSeconds;
-
-        public long getExpireInSeconds()
-        {
-            return expireInSeconds;
-        }
-
-        private transient Pattern compiledPattern;
-
-        public Pattern getCompiledPattern()
-        {
-            return compiledPattern;
-        }
-    }
 }
