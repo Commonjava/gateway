@@ -10,5 +10,5 @@ public class ProxyConstants
 
     // Auto generated, ignore such upstream headers
     public static final List<String> FORBIDDEN_HEADERS =
-                    Arrays.asList( "content-length", "connection", "transfer-encoding" );
+                    Arrays.asList( "connection", "transfer-encoding" );
 }
