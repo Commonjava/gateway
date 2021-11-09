@@ -5,13 +5,16 @@ import org.apache.commons.io.FileUtils;
 import org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy;
 import org.commonjava.util.gateway.cache.strategy.PrefixTrimCacheStrategy;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
+import org.commonjava.util.gateway.util.BufferStreamingOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -144,18 +147,25 @@ public class CacheHandler
 
         logger.debug( "Write to file: {}", f );
         Object entity = resp.getEntity();
-        if ( entity instanceof byte[] )
+        if ( entity instanceof BufferStreamingOutput )
         {
-            byte[] bytes = (byte[]) entity;
-            try
-            {
-                FileUtils.writeByteArrayToFile( f, bytes );
-                FileUtils.writeStringToFile( metadata, getHeadersAsString( resp.getStringHeaders() ), DEFAULT_CHARSET );
-            }
-            catch ( IOException e )
-            {
-                logger.warn( "Can not write cache file", e );
-            }
+            BufferStreamingOutput bso = (BufferStreamingOutput) entity;
+            bso.setCacheStreamSupplier( ()->{
+                f.getParentFile().mkdirs();
+
+                try
+                {
+                    //                FileUtils.writeByteArrayToFile( f, bytes );
+                    FileUtils.writeStringToFile( metadata, getHeadersAsString( resp.getStringHeaders() ), DEFAULT_CHARSET );
+                    return new BufferedOutputStream( new FileOutputStream( f ) );
+                }
+                catch ( IOException e )
+                {
+                    logger.warn( "Can not write cache file", e );
+                }
+
+                return null;
+            } );
         }
     }
 

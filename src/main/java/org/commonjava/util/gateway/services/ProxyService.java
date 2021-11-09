@@ -13,6 +13,7 @@ import org.commonjava.util.gateway.cache.CacheHandler;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.interceptor.ExceptionHandler;
 import org.commonjava.util.gateway.interceptor.MetricsHandler;
+import org.commonjava.util.gateway.util.BufferStreamingOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -194,8 +196,8 @@ public class ProxyService
         } );
         if ( resp.body() != null )
         {
-            byte[] bytes = resp.body().getBytes();
-            builder.entity( bytes );
+            StreamingOutput so = new BufferStreamingOutput( resp );
+            builder.entity( so );
         }
         return builder.build();
     }
