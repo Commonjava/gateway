@@ -2,10 +2,8 @@ package org.commonjava.util.gateway;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import org.commonjava.util.gateway.services.ProxyService;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
-import org.jboss.resteasy.core.ResteasyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
