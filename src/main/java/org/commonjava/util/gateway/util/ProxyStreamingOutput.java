@@ -39,7 +39,7 @@ public class ProxyStreamingOutput
                 OutputStream out = output;
                 if ( cacheStream != null )
                 {
-                    out = new TeeOutputStream( output, cacheStream );
+                    out = new TeeOutputStream( output, cacheStream ); // lgtm [java/output-resource-leak]
                 }
 
                 logger.trace( "Copying from: {} to: {}", bodyStream, out );
