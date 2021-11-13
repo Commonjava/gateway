@@ -84,11 +84,11 @@ public class ProxyConfiguration
         if ( file.exists() )
         {
             logger.info( "Load proxy config from file, {}", file );
-            try
+            try(FileInputStream fis = new FileInputStream( file ))
             {
-                doLoad( new FileInputStream( file ) );
+                doLoad( fis );
             }
-            catch ( FileNotFoundException e )
+            catch ( IOException e )
             {
                 logger.error( "Load failed", e );
                 return;
