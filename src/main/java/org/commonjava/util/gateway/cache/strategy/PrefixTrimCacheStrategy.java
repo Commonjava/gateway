@@ -1,7 +1,7 @@
 package org.commonjava.util.gateway.cache.strategy;
 
 import org.commonjava.util.gateway.cache.CacheStrategy;
-import org.commonjava.util.gateway.config.ProxyConfiguration;
+import org.commonjava.util.gateway.config.CacheConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class PrefixTrimCacheStrategy
     private static String pathPrefix = System.getProperty( "pathPrefixToTrim" ); // set vis -DpathPrefixToTrim
 
     @Override
-    public File getCachedFile( ProxyConfiguration.Cache cache, String path )
+    public File getCachedFile( CacheConfiguration cache, String path )
     {
         if ( isNotBlank( pathPrefix ) )
         {

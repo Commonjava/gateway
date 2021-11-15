@@ -4,7 +4,9 @@ import io.smallrye.mutiny.Uni;
 import org.apache.commons.io.FileUtils;
 import org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy;
 import org.commonjava.util.gateway.cache.strategy.PrefixTrimCacheStrategy;
-import org.commonjava.util.gateway.config.ProxyConfiguration;
+import org.commonjava.util.gateway.config.CacheConfiguration;
+import org.commonjava.util.gateway.config.ServiceConfig;
+import org.commonjava.util.gateway.util.ProxyStreamingOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -30,9 +33,9 @@ public class CacheHandler
 {
     private final Logger logger = LoggerFactory.getLogger( CacheHandler.class );
 
-    public Uni<Response> wrapWithCache( Uni<Response> uni, String path, ProxyConfiguration.ServiceConfig service )
+    public Uni<Response> wrapWithCache( Uni<Response> uni, String path, ServiceConfig service )
     {
-        ProxyConfiguration.Cache cache = service.cache;
+        CacheConfiguration cache = service.cache;
         if ( cache == null )
         {
             logger.trace( "No cache defined" );
@@ -67,9 +70,10 @@ public class CacheHandler
         if ( cacheStrategy.isCacheForWrite( cache, path ) )
         {
             uni = uni.onItem().invoke( resp -> {
-                if ( resp.getStatus() == OK.getStatusCode() )
+                Object entity = resp.getEntity();
+                if ( resp.getStatus() == OK.getStatusCode() && entity != null && entity instanceof ProxyStreamingOutput )
                 {
-                    writeToCache( resp, cache, path );
+                    writeToCache( resp, cache, path, (ProxyStreamingOutput) entity );
                 }
             } );
         }
@@ -88,7 +92,7 @@ public class CacheHandler
         return DefaultCacheStrategy.INSTANCE;
     }
 
-    private Uni<Response> renderCachedFile( ProxyConfiguration.Cache cache, File cached ) throws IOException
+    private Uni<Response> renderCachedFile( CacheConfiguration cache, File cached ) throws IOException
     {
         long expire = cache.getExpireInSeconds();
         if ( expire > 0 )
@@ -135,7 +139,7 @@ public class CacheHandler
 
     private static final Charset DEFAULT_CHARSET = defaultCharset();
 
-    private void writeToCache( Response resp, ProxyConfiguration.Cache cache, String path )
+    private void writeToCache( Response resp, CacheConfiguration cache, String path, ProxyStreamingOutput pipe )
     {
         CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
 
@@ -143,19 +147,17 @@ public class CacheHandler
         File metadata = getMetadataFile( f );
 
         logger.debug( "Write to file: {}", f );
-        Object entity = resp.getEntity();
-        if ( entity instanceof byte[] )
+        f.getParentFile().mkdirs();
+
+        try
         {
-            byte[] bytes = (byte[]) entity;
-            try
-            {
-                FileUtils.writeByteArrayToFile( f, bytes );
-                FileUtils.writeStringToFile( metadata, getHeadersAsString( resp.getStringHeaders() ), DEFAULT_CHARSET );
-            }
-            catch ( IOException e )
-            {
-                logger.warn( "Can not write cache file", e );
-            }
+            //                FileUtils.writeByteArrayToFile( f, bytes );
+            FileUtils.writeStringToFile( metadata, getHeadersAsString( resp.getStringHeaders() ), DEFAULT_CHARSET );
+            pipe.setCacheStream( new FileOutputStream( f ) );
+        }
+        catch ( IOException e )
+        {
+            logger.warn( "Can not write cache file", e );
         }
     }
 
@@ -176,6 +178,5 @@ public class CacheHandler
         } );
         return sb.toString();
     }
-
 
 }

@@ -1,7 +1,7 @@
 package org.commonjava.util.gateway.cache.strategy;
 
 import org.commonjava.util.gateway.cache.CacheStrategy;
-import org.commonjava.util.gateway.config.ProxyConfiguration;
+import org.commonjava.util.gateway.config.CacheConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class DefaultCacheStrategy
     public static final File DEFAULT_CACHE_DIR = new File( USER_DIR, "cache" );
 
     @Override
-    public boolean isCache( ProxyConfiguration.Cache cache, String path )
+    public boolean isCache( CacheConfiguration cache, String path )
     {
         if ( cache != null && cache.enabled && matchPattern( cache.getCompiledPattern(), path ) )
         {
@@ -34,7 +34,7 @@ public class DefaultCacheStrategy
     }
 
     @Override
-    public boolean isCacheForWrite( ProxyConfiguration.Cache cache, String path )
+    public boolean isCacheForWrite( CacheConfiguration cache, String path )
     {
         if ( cache != null && cache.enabled && !cache.readonly && matchPattern( cache.getCompiledPattern(), path ) )
         {
@@ -50,7 +50,7 @@ public class DefaultCacheStrategy
     }
 
     @Override
-    public File getCachedFile( ProxyConfiguration.Cache cache, String path )
+    public File getCachedFile( CacheConfiguration cache, String path )
     {
         File f;
         if ( isNotBlank( cache.dir ) )
