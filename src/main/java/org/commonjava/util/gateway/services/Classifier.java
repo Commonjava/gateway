@@ -1,11 +1,14 @@
 package org.commonjava.util.gateway.services;
 
+import io.opentelemetry.api.trace.Span;
 import io.quarkus.vertx.ConsumeEvent;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import org.apache.commons.io.FilenameUtils;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.config.ServiceConfig;
 import org.commonjava.util.gateway.exception.ServiceNotFoundException;
+import org.commonjava.util.gateway.util.OtelAdapter;
 import org.commonjava.util.gateway.util.WebClientAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,9 @@ public class Classifier
 
     @Inject
     ProxyConfiguration proxyConfiguration;
+
+    @Inject
+    OtelAdapter otel;
 
     private Map<ServiceConfig, WebClientAdapter> clientMap = new ConcurrentHashMap<>();
 
@@ -79,6 +85,20 @@ public class Classifier
         {
             throw new ServiceNotFoundException( "Service not found, path: " + path + ", method: " + request.method() );
         }
+
+        if ( otel.enabled() )
+        {
+            Span span = Span.current();
+            span.setAttribute( "service_name", "gateway" );
+            span.setAttribute( "name", request.method().name() );
+            span.setAttribute( "gateway.target.host", service.host );
+            span.setAttribute( "gateway.target.port", service.port );
+            span.setAttribute( "gateway.target.method", request.method().name() );
+            span.setAttribute( "gateway.target.path", path );
+
+            span.setAttribute( "path.ext", FilenameUtils.getExtension( path ) );
+        }
+
         return action.apply( getWebClient( service ), service );
     }
 
@@ -105,6 +125,6 @@ public class Classifier
 
     private WebClientAdapter getWebClient( ServiceConfig service ) throws Exception
     {
-        return clientMap.computeIfAbsent( service, sc -> new WebClientAdapter( sc, proxyConfiguration, timeout ) );
+        return clientMap.computeIfAbsent( service, sc -> new WebClientAdapter( sc, proxyConfiguration, timeout, otel ) );
     }
 }
