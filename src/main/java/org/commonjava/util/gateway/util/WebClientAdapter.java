@@ -200,13 +200,13 @@ public class WebClientAdapter
             }
 
             io.vertx.core.MultiMap headers = request.headers();
-
             headers.forEach( h -> {
                 if ( !HOST.equalsIgnoreCase( h.getKey() ) )
                 {
                     requestBuilder.header( h.getKey(), h.getValue() );
                 }
             } );
+
             if ( headers.get( PROXY_ORIGIN ) == null )
             {
                 String uri = request.absoluteURI();
@@ -235,6 +235,13 @@ public class WebClientAdapter
             }
 
             Duration pathTimeout = serviceConfig.getMappedTimeout( path );
+            if ( otel.enabled() )
+            {
+                Span.current()
+                    .setAttribute( "target.timeout",
+                                   pathTimeout != null ? pathTimeout.toMillis() : timeout.get() );
+            }
+
             OkHttpClient callClient = client;
             if ( pathTimeout != null || cleanupInterceptor != null )
             {
@@ -397,13 +404,23 @@ public class WebClientAdapter
                     {
                         return resp;
                     }
-                    else if ( tryCounter >= count )
-                    {
-                        return resp;
-                    }
                     else
                     {
-                        logger.debug( "Response missing or indicates server error: {}. Retrying", resp );
+                        if ( tryCounter >= count )
+                        {
+                            return resp;
+                        }
+                        else
+                        {
+                            if ( otel.enabled() )
+                            {
+                                Span.current()
+                                    .setAttribute( "target.try." + tryCounter + ".status_code", resp.code() );
+                            }
+
+                            logger.debug( "TRY({}/{}): Response missing or indicates server error: {}. Retrying",
+                                          tryCounter, count, resp );
+                        }
                     }
                 }
                 catch( IOException e )
@@ -411,6 +428,13 @@ public class WebClientAdapter
                     if ( tryCounter >= count )
                     {
                         throw e;
+                    }
+
+                    if ( otel.enabled() )
+                    {
+                        Span.current().setAttribute( "target.try." + tryCounter + ".error_message", e.getMessage() );
+                        Span.current()
+                            .setAttribute( "target.try." + tryCounter + ".error_class", e.getClass().getSimpleName() );
                     }
 
                     logger.debug( "TRY(" + tryCounter + "/" + count + "): Failed upstream request: " + req.url(), e );
@@ -422,12 +446,23 @@ public class WebClientAdapter
                 }
                 catch ( InterruptedException e )
                 {
+                    if ( otel.enabled() )
+                    {
+                        Span.current().setAttribute( "target.interrupted", 1 );
+                        Span.current().setAttribute( "target.try." + tryCounter + ".interrupted", 1 );
+                    }
+
                     return new Response.Builder().code( 502 ).message( "Thread interruption while waiting for upstream retry!" ).build();
                 }
 
                 tryCounter++;
             }
             while ( tryCounter < count );
+
+            if ( otel.enabled() )
+            {
+                Span.current().setAttribute( "target.retries", tryCounter );
+            }
 
             throw new IOException( "Proxy retry interceptor reached an unexpected fall-through condition!" );
         }
@@ -448,6 +483,11 @@ public class WebClientAdapter
         {
             try
             {
+                if ( otel.enabled() )
+                {
+                    Span.current().setAttribute( "gateway.target.bodyFile", bodyFile.getPath() );
+                }
+
                 return chain.proceed( chain.request() );
             }
             finally

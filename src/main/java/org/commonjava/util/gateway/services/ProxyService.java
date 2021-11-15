@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerRequest;
 import kotlin.Pair;
 import org.commonjava.util.gateway.cache.CacheHandler;
 import org.commonjava.util.gateway.interceptor.ExceptionHandler;
+import org.commonjava.util.gateway.util.OtelAdapter;
 import org.commonjava.util.gateway.util.ProxyStreamingOutput;
 import org.commonjava.util.gateway.util.WebClientAdapter;
 import org.slf4j.Logger;
@@ -32,6 +33,9 @@ public class ProxyService
 
     @Inject
     CacheHandler cacheHandler;
+
+    @Inject
+    OtelAdapter otel;
 
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
     {
@@ -107,7 +111,7 @@ public class ProxyService
             }
         } );
 
-        builder.entity( new ProxyStreamingOutput( resp.body().byteStream() ) );
+        builder.entity( new ProxyStreamingOutput( resp.body().byteStream(), otel ) );
         return builder.build();
     }
 
