@@ -6,8 +6,19 @@ quarkus:
         limits:
           max-body-size: 500M
 
-    package:
-        uber-jar: true
+    opentelemetry:
+        enabled: false
+        tracer:
+            exporter:
+                otlp:
+                    # This is for sending to something like opentelemetry-collector
+#                    endpoint: http://localhost:4317
+
+                    # This is for sending to Honeycomb
+#                    endpoint: "https://api.honeycomb.io:443"
+#                    headers:
+#                      - "X-honeycomb-team=<write-key>"
+#                      - "X-honeycomb-dataset=test"
 
     # Logging (disable console on prod)
     log:
@@ -29,12 +40,3 @@ quarkus:
 
     swagger-ui:
         always-include: true
-
-honeycomb:
-    enabled: false
-    dataset: test
-    write-key: test
-    base-sample-rate: 20
-    functions: |-
-      /api/content/.*|content|20,
-      /api/promote/.*|promote|1

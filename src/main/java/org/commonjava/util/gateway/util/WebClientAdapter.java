@@ -1,5 +1,8 @@
 package org.commonjava.util.gateway.util;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.UniHelper;
 import io.vertx.core.Future;
@@ -46,24 +49,28 @@ public class WebClientAdapter
 
     private AtomicLong timeout;
 
+    private OtelAdapter otel;
+
     private OkHttpClient client;
 
-    public WebClientAdapter( ServiceConfig serviceConfig, ProxyConfiguration proxyConfiguration, AtomicLong timeout )
+    public WebClientAdapter( ServiceConfig serviceConfig, ProxyConfiguration proxyConfiguration, AtomicLong timeout,
+                             OtelAdapter otel )
     {
         this.serviceConfig = serviceConfig;
         this.proxyConfiguration = proxyConfiguration;
         this.timeout = timeout;
+        this.otel = otel;
         reinit();
     }
 
-    public RequestAdapter head( String path )
+    public RequestAdapter head( String path, HttpServerRequest req )
     {
-        return new RequestAdapter( new Request.Builder().head().url( calculateUrl(path) ), path );
+        return new RequestAdapter( new Request.Builder().head().url( calculateUrl(path) ), path ).headersFrom( req );
     }
 
-    public RequestAdapter get( String path )
+    public RequestAdapter get( String path, HttpServerRequest req )
     {
-        return new RequestAdapter( new Request.Builder().get().url( calculateUrl(path) ), path );
+        return new RequestAdapter( new Request.Builder().get().url( calculateUrl(path) ), path ).headersFrom( req );
     }
 
     public RequestAdapter post( String path, InputStream is, HttpServerRequest req )
@@ -76,7 +83,7 @@ public class WebClientAdapter
             return new RequestAdapter(
                             new Request.Builder().post( RequestBody.create( bodyFile, MediaType.get( contentType ) ) )
                                                  .url( calculateUrl( path ) ), path ).withCleanup(
-                            new DeleteInterceptor( bodyFile ) );
+                            new DeleteInterceptor( bodyFile ) ).headersFrom( req );
         }
         catch ( IOException exception )
         {
@@ -94,7 +101,7 @@ public class WebClientAdapter
             return new RequestAdapter(
                             new Request.Builder().put( RequestBody.create( bodyFile, MediaType.get( contentType ) ) )
                                                  .url( calculateUrl( path ) ), path ).withCleanup(
-                            new DeleteInterceptor( bodyFile ) );
+                            new DeleteInterceptor( bodyFile ) ).headersFrom( req );
         }
         catch ( IOException exception )
         {
@@ -193,13 +200,13 @@ public class WebClientAdapter
             }
 
             io.vertx.core.MultiMap headers = request.headers();
-
             headers.forEach( h -> {
                 if ( !HOST.equalsIgnoreCase( h.getKey() ) )
                 {
                     requestBuilder.header( h.getKey(), h.getValue() );
                 }
             } );
+
             if ( headers.get( PROXY_ORIGIN ) == null )
             {
                 String uri = request.absoluteURI();
@@ -228,6 +235,13 @@ public class WebClientAdapter
             }
 
             Duration pathTimeout = serviceConfig.getMappedTimeout( path );
+            if ( otel.enabled() )
+            {
+                Span.current()
+                    .setAttribute( "target.timeout",
+                                   pathTimeout != null ? pathTimeout.toMillis() : timeout.get() );
+            }
+
             OkHttpClient callClient = client;
             if ( pathTimeout != null || cleanupInterceptor != null )
             {
@@ -249,7 +263,7 @@ public class WebClientAdapter
                 callClient = builder.build();
             }
 
-            return new CallAdapter( callClient.newCall( requestBuilder.build() ) );
+            return new CallAdapter( callClient, requestBuilder, serviceConfig );
         }
 
         public RequestAdapter withCleanup( Interceptor cleanupInterceptor )
@@ -261,18 +275,24 @@ public class WebClientAdapter
 
     public final class CallAdapter
     {
-        private Call call;
+        private OkHttpClient callClient;
+
+        private Request.Builder requestBuilder;
+
+        private ServiceConfig serviceConfig;
 
         private IOException exception;
-
-        public CallAdapter( Call call )
-        {
-            this.call = call;
-        }
 
         public CallAdapter( IOException exception )
         {
             this.exception = exception;
+        }
+
+        public CallAdapter( OkHttpClient callClient, Request.Builder requestBuilder, ServiceConfig serviceConfig )
+        {
+            this.callClient = callClient;
+            this.requestBuilder = requestBuilder;
+            this.serviceConfig = serviceConfig;
         }
 
         public Uni<Response> enqueue()
@@ -283,12 +303,51 @@ public class WebClientAdapter
             }
 
             return UniHelper.toUni( Future.future( ( p ) -> {
-                logger.trace( "Starting upstream request..." );
+                logger.debug( "Starting upstream request..." );
+
+                Span span;
+                Scope scope;
+                if ( otel.enabled() )
+                {
+                    span = otel.newClientSpan( "okhttp",
+                                                    requestBuilder.build().method() + ":" + serviceConfig.host + ":"
+                                                                    + serviceConfig.port );
+
+                    scope = span.makeCurrent();
+
+                    otel.injectContext( requestBuilder );
+                }
+                else
+                {
+                    span = null;
+                    scope = null;
+                }
+
+                Call call = callClient.newCall( requestBuilder.build() );
+
+                if ( span != null )
+                {
+                    span.setAttribute( SemanticAttributes.HTTP_METHOD, call.request().method() );
+                    span.setAttribute( SemanticAttributes.HTTP_HOST, call.request().url().host() );
+                    span.setAttribute( SemanticAttributes.HTTP_URL, call.request().url().url().toExternalForm() );
+                }
+
                 call.enqueue( new Callback()
                 {
                     @Override
                     public void onFailure( @NotNull Call call, @NotNull IOException e )
                     {
+                        if ( span != null )
+                        {
+                            span.setAttribute( "error.class", e.getClass().getSimpleName() );
+                            span.setAttribute( "error.message", e.getMessage() );
+
+                            // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
+                            // the OTEL example shows.
+                            scope.close();
+                            span.end();
+                        }
+
                         logger.trace( "Failed: " + call.request().url(), e );
                         p.fail( e );
                     }
@@ -296,6 +355,18 @@ public class WebClientAdapter
                     @Override
                     public void onResponse( @NotNull Call call, @NotNull Response response )
                     {
+                        if ( span != null )
+                        {
+                            span.setAttribute( SemanticAttributes.HTTP_STATUS_CODE, response.code() );
+                            span.setAttribute( SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH.getKey(),
+                                               response.header( "Content-Length" ) );
+
+                            // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
+                            // the OTEL example shows.
+                            scope.close();
+                            span.end();
+                        }
+
                         logger.trace( "Success: " + call.request().url() + " -> " + response.code() );
                         p.complete( response );
                     }
@@ -333,13 +404,23 @@ public class WebClientAdapter
                     {
                         return resp;
                     }
-                    else if ( tryCounter >= count )
-                    {
-                        return resp;
-                    }
                     else
                     {
-                        logger.debug( "Response missing or indicates server error: {}. Retrying", resp );
+                        if ( tryCounter >= count )
+                        {
+                            return resp;
+                        }
+                        else
+                        {
+                            if ( otel.enabled() )
+                            {
+                                Span.current()
+                                    .setAttribute( "target.try." + tryCounter + ".status_code", resp.code() );
+                            }
+
+                            logger.debug( "TRY({}/{}): Response missing or indicates server error: {}. Retrying",
+                                          tryCounter, count, resp );
+                        }
                     }
                 }
                 catch( IOException e )
@@ -347,6 +428,13 @@ public class WebClientAdapter
                     if ( tryCounter >= count )
                     {
                         throw e;
+                    }
+
+                    if ( otel.enabled() )
+                    {
+                        Span.current().setAttribute( "target.try." + tryCounter + ".error_message", e.getMessage() );
+                        Span.current()
+                            .setAttribute( "target.try." + tryCounter + ".error_class", e.getClass().getSimpleName() );
                     }
 
                     logger.debug( "TRY(" + tryCounter + "/" + count + "): Failed upstream request: " + req.url(), e );
@@ -358,12 +446,23 @@ public class WebClientAdapter
                 }
                 catch ( InterruptedException e )
                 {
+                    if ( otel.enabled() )
+                    {
+                        Span.current().setAttribute( "target.interrupted", 1 );
+                        Span.current().setAttribute( "target.try." + tryCounter + ".interrupted", 1 );
+                    }
+
                     return new Response.Builder().code( 502 ).message( "Thread interruption while waiting for upstream retry!" ).build();
                 }
 
                 tryCounter++;
             }
             while ( tryCounter < count );
+
+            if ( otel.enabled() )
+            {
+                Span.current().setAttribute( "target.retries", tryCounter );
+            }
 
             throw new IOException( "Proxy retry interceptor reached an unexpected fall-through condition!" );
         }
@@ -384,6 +483,11 @@ public class WebClientAdapter
         {
             try
             {
+                if ( otel.enabled() )
+                {
+                    Span.current().setAttribute( "gateway.target.bodyFile", bodyFile.getPath() );
+                }
+
                 return chain.proceed( chain.request() );
             }
             finally

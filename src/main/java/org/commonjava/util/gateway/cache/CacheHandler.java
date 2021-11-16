@@ -1,16 +1,19 @@
 package org.commonjava.util.gateway.cache;
 
+import io.opentelemetry.api.trace.Span;
 import io.smallrye.mutiny.Uni;
 import org.apache.commons.io.FileUtils;
 import org.commonjava.util.gateway.cache.strategy.DefaultCacheStrategy;
 import org.commonjava.util.gateway.cache.strategy.PrefixTrimCacheStrategy;
 import org.commonjava.util.gateway.config.CacheConfiguration;
 import org.commonjava.util.gateway.config.ServiceConfig;
+import org.commonjava.util.gateway.util.OtelAdapter;
 import org.commonjava.util.gateway.util.ProxyStreamingOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -33,23 +36,46 @@ public class CacheHandler
 {
     private final Logger logger = LoggerFactory.getLogger( CacheHandler.class );
 
+    @Inject
+    OtelAdapter otel;
+
     public Uni<Response> wrapWithCache( Uni<Response> uni, String path, ServiceConfig service )
     {
         CacheConfiguration cache = service.cache;
         if ( cache == null )
         {
+            if ( otel.enabled() )
+            {
+                Span.current().setAttribute( "cached", 0 );
+            }
+
             logger.trace( "No cache defined" );
             return uni;
+        }
+
+        if ( otel.enabled() )
+        {
+            Span.current().setAttribute( "cache_strategy", cache.strategy );
         }
 
         CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
         if ( cacheStrategy.isCache( cache, path ) )
         {
+            if ( otel.enabled() )
+            {
+                Span.current().setAttribute( "cached", 1 );
+            }
+
             File cached = cacheStrategy.getCachedFile( cache, path );
             String absolutePath = cached.getAbsolutePath();
             logger.trace( "Search cache, file: {}", absolutePath );
             if ( cached.exists() )
             {
+                if ( otel.enabled() )
+                {
+                    Span.current().setAttribute( "served_from", "cache" );
+                }
+
                 logger.debug( "Found file in cache, file: {}", absolutePath );
                 Uni<Response> ret = null;
                 try
@@ -69,9 +95,15 @@ public class CacheHandler
 
         if ( cacheStrategy.isCacheForWrite( cache, path ) )
         {
+            if ( otel.enabled() )
+            {
+                Span.current().setAttribute( "cached", 1 );
+                Span.current().setAttribute( "served_from", "proxy" );
+            }
+
             uni = uni.onItem().invoke( resp -> {
                 Object entity = resp.getEntity();
-                if ( resp.getStatus() == OK.getStatusCode() && entity != null && entity instanceof ProxyStreamingOutput )
+                if ( resp.getStatus() == OK.getStatusCode() && entity instanceof ProxyStreamingOutput )
                 {
                     writeToCache( resp, cache, path, (ProxyStreamingOutput) entity );
                 }
@@ -118,6 +150,11 @@ public class CacheHandler
     private Uni<Response> renderFile( File cached ) throws IOException
     {
         logger.debug( "Render file, {}", cached.getPath() );
+        if ( otel.enabled() )
+        {
+            Span.current().setAttribute( "response.content_length", cached.length() );
+        }
+
         Response.ResponseBuilder resp = Response.ok( cached );
         File httpMetadata = getMetadataFile( cached );
         if ( httpMetadata.exists() )

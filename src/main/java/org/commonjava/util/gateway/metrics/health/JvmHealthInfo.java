@@ -1,40 +1,24 @@
-package org.commonjava.util.gateway.metrics.honeycomb;
+package org.commonjava.util.gateway.metrics.health;
 
-import org.commonjava.o11yphant.honeycomb.RootSpanFields;
-
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JvmRootSpanFields
-                implements RootSpanFields
+@Singleton
+public class JvmHealthInfo
 {
     private final static long MB = 1024 * 1024;
-
-    private static final JvmRootSpanFields INSTANCE = new JvmRootSpanFields();
-
-    public static JvmRootSpanFields getInstance()
-    {
-        return INSTANCE;
-    }
 
     private final Runtime rt = Runtime.getRuntime();
 
     private final ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
 
-    private JvmRootSpanFields()
+    private JvmHealthInfo()
     {
-    }
-
-    @Override
-    public Map<String, Object> get()
-    {
-        Map<String, Object> ret = new HashMap<>();
-        getHeapInfo().forEach( ( k, v ) -> ret.put( "heap_" + k, v ) );
-        getThreadsInfo().forEach( ( k, v ) -> ret.put( "threads_" + k, v ) );
-        return ret;
     }
 
     public Map<String, Object> getHeapInfo()

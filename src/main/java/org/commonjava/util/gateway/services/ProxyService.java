@@ -1,16 +1,12 @@
 package org.commonjava.util.gateway.services;
 
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.mutiny.core.buffer.Buffer;
 import kotlin.Pair;
-import org.apache.commons.io.IOUtils;
 import org.commonjava.util.gateway.cache.CacheHandler;
-import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.interceptor.ExceptionHandler;
-import org.commonjava.util.gateway.interceptor.MetricsHandler;
+import org.commonjava.util.gateway.util.OtelAdapter;
 import org.commonjava.util.gateway.util.ProxyStreamingOutput;
 import org.commonjava.util.gateway.util.WebClientAdapter;
 import org.slf4j.Logger;
@@ -20,25 +16,17 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.util.UUID;
 
 import static io.vertx.core.http.HttpMethod.HEAD;
 import static io.vertx.core.http.impl.HttpUtils.normalizePath;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.commonjava.o11yphant.metrics.RequestContextConstants.EXTERNAL_ID;
 import static org.commonjava.util.gateway.services.ProxyConstants.FORBIDDEN_HEADERS;
 
 @ApplicationScoped
-@MetricsHandler
 @ExceptionHandler
 public class ProxyService
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
-
-
-    @Inject
-    ProxyConfiguration proxyConfiguration;
 
     @Inject
     Classifier classifier;
@@ -46,19 +34,20 @@ public class ProxyService
     @Inject
     CacheHandler cacheHandler;
 
+    @Inject
+    OtelAdapter otel;
+
     public Uni<Response> doHead( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request, ( client, service ) -> wrapAsyncCall(
-                        client.head( p ).headersFrom( request )
-                              .call(), request.method() ) ) );
+                        client.head( p, request ).call(), request.method() ) ) );
     }
 
     public Uni<Response> doGet( String path, HttpServerRequest request ) throws Exception
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request,
                                                                     ( client, service ) -> cacheHandler.wrapWithCache(
-                                                                                    wrapAsyncCall( client.get( p )
-                                                                                                         .headersFrom( request )
+                                                                                    wrapAsyncCall( client.get( p, request )
                                                                                                          .call(),
                                                                                                    request.method() ), p,
                                                                                     service ) ) );
@@ -68,7 +57,6 @@ public class ProxyService
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request, ( client, service ) -> wrapAsyncCall(
                         client.post( p, is, request )
-                              .headersFrom( request )
                               .call(), request.method() ) ) );
     }
 
@@ -76,7 +64,6 @@ public class ProxyService
     {
         return normalizePathAnd( path, p -> classifier.classifyAnd( p, request, ( client, service ) -> wrapAsyncCall(
                         client.put( p, is, request )
-                              .headersFrom(request )
                               .call(), request.method() ) ) );
     }
 
@@ -124,7 +111,7 @@ public class ProxyService
             }
         } );
 
-        builder.entity( new ProxyStreamingOutput( resp.body().byteStream() ) );
+        builder.entity( new ProxyStreamingOutput( resp.body().byteStream(), otel ) );
         return builder.build();
     }
 
@@ -140,16 +127,6 @@ public class ProxyService
         }
         String key = header.getFirst();
         return !FORBIDDEN_HEADERS.contains( key.toLowerCase() );
-    }
-
-    /**
-     * Get 'trace-id'. If client specify an 'external-id', use it. Otherwise, use an generated uuid. Services under the hook
-     * should use the hereby created 'trace-id', rather than to generate their own.
-     */
-    private String getTraceId( MultiMap headers )
-    {
-        String externalID = headers.get( EXTERNAL_ID );
-        return isNotBlank( externalID ) ? externalID : UUID.randomUUID().toString();
     }
 
     @FunctionalInterface
