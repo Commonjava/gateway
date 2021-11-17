@@ -111,13 +111,7 @@ public class WebClientAdapter
 
     private String getContentType( HttpServerRequest req )
     {
-        String contentType = req.getHeader( "Content-Type" );
-        if ( contentType == null )
-        {
-            contentType = "application/octet-stream";
-        }
-
-        return contentType;
+        return req.getHeader( "Content-Type" );
     }
 
     private File cacheInputStream( InputStream is ) throws IOException
