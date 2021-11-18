@@ -78,10 +78,8 @@ public class WebClientAdapter
         try
         {
             File bodyFile = cacheInputStream( is );
-            String contentType = getContentType( req );
-
             return new RequestAdapter(
-                            new Request.Builder().post( RequestBody.create( bodyFile, MediaType.get( contentType ) ) )
+                            new Request.Builder().post( RequestBody.create( bodyFile, getMediaType( req ) ) )
                                                  .url( calculateUrl( path ) ), path ).withCleanup(
                             new DeleteInterceptor( bodyFile ) ).headersFrom( req );
         }
@@ -96,10 +94,8 @@ public class WebClientAdapter
         try
         {
             File bodyFile = cacheInputStream( is );
-            String contentType = getContentType( req );
-
             return new RequestAdapter(
-                            new Request.Builder().put( RequestBody.create( bodyFile, MediaType.get( contentType ) ) )
+                            new Request.Builder().put( RequestBody.create( bodyFile, getMediaType( req ) ) )
                                                  .url( calculateUrl( path ) ), path ).withCleanup(
                             new DeleteInterceptor( bodyFile ) ).headersFrom( req );
         }
@@ -109,9 +105,14 @@ public class WebClientAdapter
         }
     }
 
-    private String getContentType( HttpServerRequest req )
+    private MediaType getMediaType( HttpServerRequest req )
     {
-        return req.getHeader( "Content-Type" );
+        String contentType = req.getHeader( "Content-Type" );
+        if ( contentType != null )
+        {
+            return MediaType.get( contentType );
+        }
+        return null;
     }
 
     private File cacheInputStream( InputStream is ) throws IOException
