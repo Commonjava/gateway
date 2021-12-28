@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.commonjava.util</groupId>
   <artifactId>gateway</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <name>Gateway :: Project Root</name>
   <inceptionYear>2020</inceptionYear>
   <scm>
