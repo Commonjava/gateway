@@ -7,7 +7,7 @@ quarkus:
           max-body-size: 500M
 
     opentelemetry:
-        enabled: false
+        enabled: true
         tracer:
             exporter:
                 otlp:
