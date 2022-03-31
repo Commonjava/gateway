@@ -9,6 +9,11 @@ quarkus:
     opentelemetry:
         enabled: true
         tracer:
+            enabled: true
+            # reflect sampling on collector
+            resource-attributes: sampler_ratio=0.05
+            sampler:
+                ratio: 0.05
             exporter:
                 otlp:
                     # This is for sending to something like opentelemetry-collector
