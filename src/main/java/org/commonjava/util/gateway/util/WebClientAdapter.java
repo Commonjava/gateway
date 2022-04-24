@@ -389,9 +389,15 @@ public class WebClientAdapter
         public Response intercept( @NotNull Chain chain ) throws IOException
         {
             Request req = chain.request();
-            Response resp;
+            Response resp = null;
             int tryCounter = 0;
             do {
+                if ( resp != null )
+                {
+                    // We will get java.lang.IllegalStateException if the previous response is still open for
+                    // whatever reason when retrying
+                    resp.close();
+                }
                 try
                 {
                     resp = chain.proceed( req );
