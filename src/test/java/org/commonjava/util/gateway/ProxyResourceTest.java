@@ -135,4 +135,13 @@ public class ProxyResourceTest
                .body( containsString( "Retries exhausted" ) );
     }
 
+    @Test
+    public void testProxyGetPathWithParams()
+    {
+        given().when()
+                .get( PATH_WITH_REQ_PARAMS )
+                .then()
+                .statusCode( 200 )
+                .body( is( PATH_WITH_REQ_PARAMS_CONTENT ) );
+    }
 }

@@ -72,6 +72,10 @@ public class TestResources
 
     public static final String EXCEPTION_PATH = "/api/content/maven/hosted/local-deployments/exception";
 
+    public static final String PATH_WITH_REQ_PARAMS = "/api/admin/stores/query/all?pkgType=maven&type=remote";
+
+    public static final String PATH_WITH_REQ_PARAMS_CONTENT = "HELLO";
+
     public WireMockServer wireMockServer;
 
     @Override
@@ -86,6 +90,10 @@ public class TestResources
 
         wireMockServer.stubFor( get( metadataUrl ).willReturn(
                         aResponse().withHeader( ORIGIN, ORIGIN_VALUE ).withBody( METADATA_CONTENT ) ) );
+
+        wireMockServer.stubFor( get( urlEqualTo(PATH_WITH_REQ_PARAMS) )
+                .withQueryParam( "pkgType", equalTo("maven") ).withQueryParam( "type", equalTo("remote") )
+                .willReturn( aResponse().withBody( PATH_WITH_REQ_PARAMS_CONTENT )) );
 
         wireMockServer.stubFor( head( metadataUrl ).willReturn( aResponse().withHeader( ORIGIN, ORIGIN_VALUE ) ) );
 
