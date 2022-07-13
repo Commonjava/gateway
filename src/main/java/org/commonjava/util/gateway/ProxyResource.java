@@ -18,6 +18,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
+import static org.commonjava.util.gateway.util.ServiceUtils.pathWithParams;
+
 @Path( "/{path: (.*)}" )
 public class ProxyResource
 {
@@ -38,8 +40,8 @@ public class ProxyResource
     public Uni<Response> get( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
-        logger.debug( "Get resource: {}", path );
-        return proxyService.doGet( path, request );
+        logger.debug( "Get resource: {}, params: {}", path, request.params() );
+        return proxyService.doGet( pathWithParams( path, request.params() ), request );
     }
 
     @POST
