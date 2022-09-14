@@ -80,36 +80,26 @@ public class Classifier
     public <R> R classifyAnd( String path, HttpServerRequest request,
                               BiFunction<WebClientAdapter, ServiceConfig, R> action ) throws Exception
     {
-        if ( otel.enabled() )
-        {
-            Span span = Span.current();
-            span.setAttribute( "service_name", "gateway" );
-            span.setAttribute( "name", request.method().name() );
-            span.setAttribute( "path.ext", FilenameUtils.getExtension( path ) );
-        }
+        Span span = Span.current();
+        span.setAttribute( "service_name", "gateway" );
+        span.setAttribute( "name", request.method().name() );
+        span.setAttribute( "path.ext", FilenameUtils.getExtension( path ) );
 
         ServiceConfig service = getServiceConfig( path, request );
         if ( service == null )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "serviced", 0 );
-                Span.current().setAttribute( "missing.path", path );
-                Span.current().setAttribute( "missing.method", request.method().name() );
-            }
+            span.setAttribute( "serviced", 0 );
+            span.setAttribute( "missing.path", path );
+            span.setAttribute( "missing.method", request.method().name() );
 
             throw new ServiceNotFoundException( "Service not found, path: " + path + ", method: " + request.method() );
         }
 
-        if ( otel.enabled() )
-        {
-            Span span = Span.current();
-            Span.current().setAttribute( "serviced", 1 );
-            span.setAttribute( "target.host", service.host );
-            span.setAttribute( "target.port", service.port );
-            span.setAttribute( "target.method", request.method().name() );
-            span.setAttribute( "target.path", path );
-        }
+        span.setAttribute( "serviced", 1 );
+        span.setAttribute( "target.host", service.host );
+        span.setAttribute( "target.port", service.port );
+        span.setAttribute( "target.method", request.method().name() );
+        span.setAttribute( "target.path", path );
 
         return action.apply( getWebClient( service ), service );
     }

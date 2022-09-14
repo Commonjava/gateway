@@ -53,10 +53,7 @@ public class ProxyStreamingOutput
                 logger.trace( "Copying from: {} to: {}", bodyStream, out );
                 IOUtils.copy( bodyStream, out );
 
-                if ( otel.enabled() )
-                {
-                    Span.current().setAttribute( "response.content_length", cout.getByteCount() );
-                }
+                Span.current().setAttribute( "response.content_length", cout.getByteCount() );
 
             }
             finally
@@ -67,10 +64,7 @@ public class ProxyStreamingOutput
         }
         else
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "response.content_length", 0 );
-            }
+            Span.current().setAttribute( "response.content_length", 0 );
         }
     }
 
@@ -87,11 +81,8 @@ public class ProxyStreamingOutput
         }
         catch ( IOException e )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "body.ignored_error_class", e.getClass().getSimpleName() );
-                Span.current().setAttribute( "body.ignored_error_class", e.getMessage() );
-            }
+            Span.current().setAttribute( "body.ignored_error_class", e.getClass().getSimpleName() );
+            Span.current().setAttribute( "body.ignored_error_class", e.getMessage() );
 
             logger.trace( "Failed to close body stream in proxy response.", e );
         }
@@ -111,11 +102,8 @@ public class ProxyStreamingOutput
         }
         catch ( IOException e )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "cache.ignored_error_class", e.getClass().getSimpleName() );
-                Span.current().setAttribute( "cache.ignored_error_class", e.getMessage() );
-            }
+            Span.current().setAttribute( "cache.ignored_error_class", e.getClass().getSimpleName() );
+            Span.current().setAttribute( "cache.ignored_error_class", e.getMessage() );
 
             logger.trace( "Failed to close cache stream in proxy response.", e );
         }

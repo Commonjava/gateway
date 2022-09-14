@@ -44,37 +44,25 @@ public class CacheHandler
         CacheConfiguration cache = service.cache;
         if ( cache == null )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "cached", 0 );
-            }
+            Span.current().setAttribute( "cached", 0 );
 
             logger.trace( "No cache defined" );
             return uni;
         }
 
-        if ( otel.enabled() )
-        {
-            Span.current().setAttribute( "cache_strategy", cache.strategy );
-        }
+        Span.current().setAttribute( "cache_strategy", cache.strategy );
 
         CacheStrategy cacheStrategy = getCacheStrategy( cache.strategy );
         if ( cacheStrategy.isCache( cache, path ) )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "cached", 1 );
-            }
+            Span.current().setAttribute( "cached", 1 );
 
             File cached = cacheStrategy.getCachedFile( cache, path );
             String absolutePath = cached.getAbsolutePath();
             logger.trace( "Search cache, file: {}", absolutePath );
             if ( cached.exists() )
             {
-                if ( otel.enabled() )
-                {
-                    Span.current().setAttribute( "served_from", "cache" );
-                }
+                Span.current().setAttribute( "served_from", "cache" );
 
                 logger.debug( "Found file in cache, file: {}", absolutePath );
                 Uni<Response> ret = null;
@@ -95,11 +83,8 @@ public class CacheHandler
 
         if ( cacheStrategy.isCacheForWrite( cache, path ) )
         {
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "cached", 1 );
-                Span.current().setAttribute( "served_from", "proxy" );
-            }
+            Span.current().setAttribute( "cached", 1 );
+            Span.current().setAttribute( "served_from", "proxy" );
 
             uni = uni.onItem().invoke( resp -> {
                 Object entity = resp.getEntity();
@@ -150,10 +135,7 @@ public class CacheHandler
     private Uni<Response> renderFile( File cached ) throws IOException
     {
         logger.debug( "Render file, {}", cached.getPath() );
-        if ( otel.enabled() )
-        {
-            Span.current().setAttribute( "response.content_length", cached.length() );
-        }
+        Span.current().setAttribute( "response.content_length", cached.length() );
 
         Response.ResponseBuilder resp = Response.ok( cached );
         File httpMetadata = getMetadataFile( cached );
