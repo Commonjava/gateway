@@ -1,6 +1,7 @@
 package org.commonjava.util.gateway.util;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
@@ -20,19 +21,9 @@ public class OtelAdapter
     @ConfigProperty( name = "quarkus.opentelemetry.enabled" )
     Boolean enabled;
 
-    public boolean enabled()
-    {
-        return enabled == Boolean.TRUE;
-    }
-
     public Span newClientSpan( String adapterName, String name )
     {
-        if ( !enabled )
-        {
-            return null;
-        }
-
-        return GlobalOpenTelemetry.get().getTracer( adapterName ).spanBuilder( name )
+        return getOtelInstance().getTracer( adapterName ).spanBuilder( name )
                                        .setSpanKind( SpanKind.CLIENT )
                                        .setAttribute( "service_name", "gateway" )
                                        .startSpan();
@@ -40,14 +31,20 @@ public class OtelAdapter
 
     public void injectContext( Request.Builder requestBuilder )
     {
-        if ( !enabled )
-        {
-            return;
-        }
-
-        GlobalOpenTelemetry.get().getPropagators()
+        getOtelInstance().getPropagators()
                 .getTextMapPropagator()
                 .inject( Context.current(), requestBuilder, OKHTTP_CONTEXT_SETTER );
 
+    }
+
+    private OpenTelemetry getOtelInstance() {
+        OpenTelemetry otelInstance;
+        if ( !enabled )
+        {
+            otelInstance = OpenTelemetry.noop();
+        } else {
+            otelInstance = GlobalOpenTelemetry.get();
+        }
+        return otelInstance;
     }
 }

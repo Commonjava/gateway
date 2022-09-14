@@ -230,12 +230,9 @@ public class WebClientAdapter
             }
 
             Duration pathTimeout = serviceConfig.getMappedTimeout( path );
-            if ( otel.enabled() )
-            {
-                Span.current()
-                    .setAttribute( "target.timeout",
-                                   pathTimeout != null ? pathTimeout.toMillis() : timeout.get() );
-            }
+            Span.current()
+                .setAttribute( "target.timeout",
+                               pathTimeout != null ? pathTimeout.toMillis() : timeout.get() );
 
             OkHttpClient callClient = client;
             if ( pathTimeout != null || cleanupInterceptor != null )
@@ -300,48 +297,34 @@ public class WebClientAdapter
             return UniHelper.toUni( Future.future( ( p ) -> {
                 logger.debug( "Starting upstream request..." );
 
-                Span span;
-                Scope scope;
-                if ( otel.enabled() )
-                {
-                    span = otel.newClientSpan( "okhttp",
+                Span span = otel.newClientSpan( "okhttp",
                                                     requestBuilder.build().method() + ":" + serviceConfig.host + ":"
                                                                     + serviceConfig.port );
 
-                    scope = span.makeCurrent();
+                Scope scope = span.makeCurrent();
 
-                    otel.injectContext( requestBuilder );
-                }
-                else
-                {
-                    span = null;
-                    scope = null;
-                }
+                otel.injectContext( requestBuilder );
 
                 Call call = callClient.newCall( requestBuilder.build() );
 
-                if ( span != null )
-                {
-                    span.setAttribute( SemanticAttributes.HTTP_METHOD, call.request().method() );
-                    span.setAttribute( SemanticAttributes.HTTP_HOST, call.request().url().host() );
-                    span.setAttribute( SemanticAttributes.HTTP_URL, call.request().url().url().toExternalForm() );
-                }
+
+                span.setAttribute( SemanticAttributes.HTTP_METHOD, call.request().method() );
+                span.setAttribute( SemanticAttributes.HTTP_HOST, call.request().url().host() );
+                span.setAttribute( SemanticAttributes.HTTP_URL, call.request().url().url().toExternalForm() );
 
                 call.enqueue( new Callback()
                 {
                     @Override
                     public void onFailure( @NotNull Call call, @NotNull IOException e )
                     {
-                        if ( span != null )
-                        {
-                            span.setAttribute( "error.class", e.getClass().getSimpleName() );
-                            span.setAttribute( "error.message", e.getMessage() );
 
-                            // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
-                            // the OTEL example shows.
-                            scope.close();
-                            span.end();
-                        }
+                        span.setAttribute( "error.class", e.getClass().getSimpleName() );
+                        span.setAttribute( "error.message", e.getMessage() );
+
+                        // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
+                        // the OTEL example shows.
+                        scope.close();
+                        span.end();
 
                         logger.trace( "Failed: " + call.request().url(), e );
                         p.fail( e );
@@ -350,17 +333,14 @@ public class WebClientAdapter
                     @Override
                     public void onResponse( @NotNull Call call, @NotNull Response response )
                     {
-                        if ( span != null )
-                        {
-                            span.setAttribute( SemanticAttributes.HTTP_STATUS_CODE, response.code() );
-                            span.setAttribute( SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH.getKey(),
-                                               response.header( "Content-Length" ) );
+                        span.setAttribute( SemanticAttributes.HTTP_STATUS_CODE, response.code() );
+                        span.setAttribute( SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH.getKey(),
+                                           response.header( "Content-Length" ) );
 
-                            // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
-                            // the OTEL example shows.
-                            scope.close();
-                            span.end();
-                        }
+                        // NOTE: Because we're doing this using a Future, we can't use try-with-resources/finally, as
+                        // the OTEL example shows.
+                        scope.close();
+                        span.end();
 
                         logger.trace( "Success: " + call.request().url() + " -> " + response.code() );
                         p.complete( response );
@@ -413,11 +393,8 @@ public class WebClientAdapter
                         }
                         else
                         {
-                            if ( otel.enabled() )
-                            {
-                                Span.current()
-                                    .setAttribute( "target.try." + tryCounter + ".status_code", resp.code() );
-                            }
+                            Span.current()
+                                .setAttribute( "target.try." + tryCounter + ".status_code", resp.code() );
 
                             logger.debug( "TRY({}/{}): Response missing or indicates server error: {}. Retrying",
                                           tryCounter, count, resp );
@@ -431,12 +408,9 @@ public class WebClientAdapter
                         throw e;
                     }
 
-                    if ( otel.enabled() )
-                    {
-                        Span.current().setAttribute( "target.try." + tryCounter + ".error_message", e.getMessage() );
-                        Span.current()
-                            .setAttribute( "target.try." + tryCounter + ".error_class", e.getClass().getSimpleName() );
-                    }
+                    Span.current().setAttribute( "target.try." + tryCounter + ".error_message", e.getMessage() );
+                    Span.current()
+                        .setAttribute( "target.try." + tryCounter + ".error_class", e.getClass().getSimpleName() );
 
                     logger.debug( "TRY(" + tryCounter + "/" + count + "): Failed upstream request: " + req.url(), e );
                 }
@@ -447,11 +421,8 @@ public class WebClientAdapter
                 }
                 catch ( InterruptedException e )
                 {
-                    if ( otel.enabled() )
-                    {
-                        Span.current().setAttribute( "target.interrupted", 1 );
-                        Span.current().setAttribute( "target.try." + tryCounter + ".interrupted", 1 );
-                    }
+                    Span.current().setAttribute( "target.interrupted", 1 );
+                    Span.current().setAttribute( "target.try." + tryCounter + ".interrupted", 1 );
 
                     return new Response.Builder().code( 502 ).message( "Thread interruption while waiting for upstream retry!" ).build();
                 }
@@ -460,10 +431,7 @@ public class WebClientAdapter
             }
             while ( tryCounter < count );
 
-            if ( otel.enabled() )
-            {
-                Span.current().setAttribute( "target.retries", tryCounter );
-            }
+            Span.current().setAttribute( "target.retries", tryCounter );
 
             throw new IOException( "Proxy retry interceptor reached an unexpected fall-through condition!" );
         }
@@ -484,10 +452,7 @@ public class WebClientAdapter
         {
             try
             {
-                if ( otel.enabled() )
-                {
-                    Span.current().setAttribute( "gateway.target.bodyFile", bodyFile.getPath() );
-                }
+                Span.current().setAttribute( "gateway.target.bodyFile", bodyFile.getPath() );
 
                 return chain.proceed( chain.request() );
             }
