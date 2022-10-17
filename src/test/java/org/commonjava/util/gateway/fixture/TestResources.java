@@ -1,6 +1,7 @@
 package org.commonjava.util.gateway.fixture;
 
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static java.nio.charset.Charset.defaultCharset;
 import static org.commonjava.util.gateway.fixture.TestResponseTransformer.TRANSFORMER_NAME;
 
 public class TestResources
@@ -72,7 +74,7 @@ public class TestResources
 
     public static final String EXCEPTION_PATH = "/api/content/maven/hosted/local-deployments/exception";
 
-    public static final String PATH_WITH_REQ_PARAMS = "/api/admin/stores/query/all?pkgType=maven&type=remote";
+    public static final String PATH_WITH_REQ_PARAMS_BASE = "/api/admin/stores/query/all";
 
     public static final String PATH_WITH_REQ_PARAMS_CONTENT = "HELLO";
 
@@ -91,8 +93,10 @@ public class TestResources
         wireMockServer.stubFor( get( metadataUrl ).willReturn(
                         aResponse().withHeader( ORIGIN, ORIGIN_VALUE ).withBody( METADATA_CONTENT ) ) );
 
-        wireMockServer.stubFor( get( urlEqualTo(PATH_WITH_REQ_PARAMS) )
-                .withQueryParam( "pkgType", equalTo("maven") ).withQueryParam( "type", equalTo("remote") )
+        wireMockServer.stubFor( get( urlPathEqualTo(PATH_WITH_REQ_PARAMS_BASE) )
+                .withQueryParam( "pkgType", equalTo("maven") )
+                .withQueryParam( "type", equalTo("remote") )
+                .withQueryParam( "name", equalTo( "builds-untested+shared-imports" ))
                 .willReturn( aResponse().withBody( PATH_WITH_REQ_PARAMS_CONTENT )) );
 
         wireMockServer.stubFor( head( metadataUrl ).willReturn( aResponse().withHeader( ORIGIN, ORIGIN_VALUE ) ) );
