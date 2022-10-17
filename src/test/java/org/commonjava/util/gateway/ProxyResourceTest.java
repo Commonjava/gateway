@@ -139,7 +139,7 @@ public class ProxyResourceTest
     public void testProxyGetPathWithParams()
     {
         given().when()
-                .get( PATH_WITH_REQ_PARAMS )
+                .get( PATH_WITH_REQ_PARAMS_BASE + "?pkgType=maven&type=remote&name=builds-untested+shared-imports" )
                 .then()
                 .statusCode( 200 )
                 .body( is( PATH_WITH_REQ_PARAMS_CONTENT ) );

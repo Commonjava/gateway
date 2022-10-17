@@ -40,8 +40,8 @@ public class ProxyResource
     public Uni<Response> get( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
-        logger.debug( "Get resource: {}, params: {}", path, request.params() );
-        return proxyService.doGet( pathWithParams( path, request.params() ), request );
+        logger.debug( "Get resource: {}, query: {}", path, request.query() );
+        return proxyService.doGet( pathWithParams( path, request.query() ), request );
     }
 
     @POST
