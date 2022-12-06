@@ -45,3 +45,8 @@ quarkus:
 
     swagger-ui:
         always-include: true
+
+    resteasy:
+        gzip:
+            enabled: true
+            max-input: 1024M
