@@ -98,7 +98,7 @@ public class ProxyConfiguration
         File file = new File( USER_DIR, "config/" + PROXY_YAML );
         if ( file.exists() )
         {
-            logger.info( "Load proxy config from file, {}", file );
+            logger.debug( "Load proxy config from file, {}", file );
             try(FileInputStream fis = new FileInputStream( file ))
             {
                 doLoad( fis );
@@ -134,7 +134,7 @@ public class ProxyConfiguration
             String nextStateHash = DigestUtils.sha256Hex( str ).toUpperCase();
             if ( nextStateHash.equals( stateHash ) )
             {
-                logger.info( "Skip, NO_CHANGE" );
+                logger.debug( "Skip, NO_CHANGE" );
                 return;
             }
 
