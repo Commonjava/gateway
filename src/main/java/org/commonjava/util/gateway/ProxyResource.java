@@ -17,6 +17,7 @@ package org.commonjava.util.gateway;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
+import org.commonjava.util.gateway.metrics.response.component.ResponseCount;
 import org.commonjava.util.gateway.services.ProxyService;
 import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class ProxyResource
     }
 
     @GET
+    @ResponseCount
     public Uni<Response> get( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
