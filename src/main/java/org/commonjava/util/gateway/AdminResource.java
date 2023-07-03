@@ -18,6 +18,7 @@ package org.commonjava.util.gateway;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
+import org.commonjava.util.gateway.metrics.response.component.ResponseCount;
 import org.commonjava.util.gateway.services.AdminService;
 
 import javax.inject.Inject;
@@ -36,6 +37,7 @@ public class AdminResource
     AdminService adminService;
 
     @GET
+    @ResponseCount
     @Produces( APPLICATION_JSON )
     @Path( "/config" )
     public Uni<JsonObject> getProxyConfig( final @Context HttpServerRequest request )
@@ -44,6 +46,7 @@ public class AdminResource
     }
 
     @GET
+    @ResponseCount
     @Produces( APPLICATION_JSON )
     @Path( "/info" )
     public Uni<JsonObject> getProxyInfo( final @Context HttpServerRequest request )
@@ -52,6 +55,7 @@ public class AdminResource
     }
 
     @GET
+    @ResponseCount
     @Produces( TEXT_PLAIN )
     @Path( "/threads" )
     public Uni<String> getThreadDump( final @Context HttpServerRequest request )

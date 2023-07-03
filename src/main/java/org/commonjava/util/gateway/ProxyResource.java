@@ -45,6 +45,7 @@ public class ProxyResource
     ProxyService proxyService;
 
     @HEAD
+    @ResponseCount
     public Uni<Response> head( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
@@ -62,6 +63,7 @@ public class ProxyResource
     }
 
     @POST
+    @ResponseCount
     public Uni<Response> post( @PathParam( "path" ) String path, InputStream is,
                                final @Context HttpServerRequest request ) throws Exception
     {
@@ -70,6 +72,7 @@ public class ProxyResource
     }
 
     @PUT
+    @ResponseCount
     public Uni<Response> put( @PathParam( "path" ) String path, InputStream is,
                               final @Context HttpServerRequest request ) throws Exception
     {
@@ -78,6 +81,7 @@ public class ProxyResource
     }
 
     @DELETE
+    @ResponseCount
     public Uni<Response> delete( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {

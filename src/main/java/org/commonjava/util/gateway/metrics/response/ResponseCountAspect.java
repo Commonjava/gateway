@@ -15,7 +15,7 @@ public class ResponseCountAspect {
 
     @AroundInvoke
     Object markInvocation(InvocationContext context) {
-        //context包含调用点信息比如method paramter 之类的
+        //context includes method parameters
         logger.debug("@@@@@@ start count");
         long beginTime = System.currentTimeMillis();
         for (Object o : context.getParameters()) {
