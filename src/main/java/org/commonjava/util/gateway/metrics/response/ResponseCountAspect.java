@@ -17,6 +17,7 @@ public class ResponseCountAspect {
     Object markInvocation(InvocationContext context) {
         //context包含调用点信息比如method paramter 之类的
         logger.debug("@@@@@@ start count");
+        long beginTime = System.currentTimeMillis();
         for (Object o : context.getParameters()) {
             logger.debug("###### Parameters: {}", o.toString());
         }
@@ -26,7 +27,8 @@ public class ResponseCountAspect {
         } catch (Exception e) {
             logger.error(e.toString());
         }
-        logger.debug("@@@@@@ count end");
+        long endTime = System.currentTimeMillis();
+        logger.debug("@@@@@@ count end, response time: " + (endTime - beginTime) + " ms");
         return ret;
     }
 }
