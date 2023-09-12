@@ -34,9 +34,11 @@
     <url>https://github.com/Commonjava/gateway</url>
     <tag>HEAD</tag>
   </scm>
+
   <properties>
-    <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <quarkus.package.type>uber-jar</quarkus.package.type>
   </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
