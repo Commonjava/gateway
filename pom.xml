@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.commonjava</groupId>
     <artifactId>service-parent</artifactId>
-    <version>3</version>
+    <version>4</version>
   </parent>
   <groupId>org.commonjava.util</groupId>
   <artifactId>gateway</artifactId>
@@ -130,7 +130,7 @@
     </resources>
     <plugins>
       <plugin>
-        <groupId>io.quarkus</groupId>
+        <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
         <executions>
           <execution>
