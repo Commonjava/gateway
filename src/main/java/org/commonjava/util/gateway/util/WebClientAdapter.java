@@ -315,7 +315,7 @@ public class WebClientAdapter
 
                 final HttpUrl url = call.request().url();
                 final String method = call.request().method();
-                logger.debug( "Starting upstream request: [{}] {}", method, url );
+                logger.info( "Starting upstream request: [{}] {}", method, url );
 
                 span.setAttribute( SemanticAttributes.HTTP_METHOD, method );
                 span.setAttribute( SemanticAttributes.HTTP_HOST, url.host() );
@@ -335,7 +335,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.debug( "Failed: [" + method + "] " + url, e );
+                        logger.info( "Failed: [" + method + "] " + url, e );
                         p.fail( e );
                     }
 
@@ -351,7 +351,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.debug( "Success: [" + method + "] " + url + " -> " + response.code() );
+                        logger.info( "Success: [" + method + "] " + url + " -> " + response.code() );
                         p.complete( response );
                     }
                 } );
