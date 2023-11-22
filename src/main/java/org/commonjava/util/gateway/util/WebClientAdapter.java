@@ -22,14 +22,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.vertx.UniHelper;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Interceptor;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import org.apache.commons.io.IOUtils;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 import org.commonjava.util.gateway.config.ServiceConfig;
@@ -310,8 +303,6 @@ public class WebClientAdapter
             }
 
             return UniHelper.toUni( Future.future( ( p ) -> {
-                logger.debug( "Starting upstream request..." );
-
                 Span span = otel.newClientSpan( "okhttp",
                                                     requestBuilder.build().method() + ":" + serviceConfig.host + ":"
                                                                     + serviceConfig.port );
@@ -322,10 +313,13 @@ public class WebClientAdapter
 
                 Call call = callClient.newCall( requestBuilder.build() );
 
+                final HttpUrl url = call.request().url();
+                final String method = call.request().method();
+                logger.debug( "Starting upstream request: [{}] {}", method, url );
 
-                span.setAttribute( SemanticAttributes.HTTP_METHOD, call.request().method() );
-                span.setAttribute( SemanticAttributes.HTTP_HOST, call.request().url().host() );
-                span.setAttribute( SemanticAttributes.HTTP_URL, call.request().url().url().toExternalForm() );
+                span.setAttribute( SemanticAttributes.HTTP_METHOD, method );
+                span.setAttribute( SemanticAttributes.HTTP_HOST, url.host() );
+                span.setAttribute( SemanticAttributes.HTTP_URL, url.url().toExternalForm() );
 
                 call.enqueue( new Callback()
                 {
@@ -341,7 +335,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.trace( "Failed: " + call.request().url(), e );
+                        logger.debug( "Failed: [" + method + "] " + url, e );
                         p.fail( e );
                     }
 
@@ -357,7 +351,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.trace( "Success: " + call.request().url() + " -> " + response.code() );
+                        logger.debug( "Success: [" + method + "] " + url + " -> " + response.code() );
                         p.complete( response );
                     }
                 } );
