@@ -313,9 +313,10 @@ public class WebClientAdapter
 
                 Call call = callClient.newCall( requestBuilder.build() );
 
+                final String timestamp = System.currentTimeMillis() + "." + System.nanoTime(); // to identify the beginning/ending log message
                 final HttpUrl url = call.request().url();
                 final String method = call.request().method();
-                logger.info( "Starting upstream request: [{}] {}", method, url );
+                logger.info( "Starting upstream request: [{}] {} ({})", method, url, timestamp );
 
                 span.setAttribute( SemanticAttributes.HTTP_METHOD, method );
                 span.setAttribute( SemanticAttributes.HTTP_HOST, url.host() );
@@ -335,7 +336,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.info( "Failed: [" + method + "] " + url, e );
+                        logger.warn( String.format("Failed: [%s] %s (%s)", method, url, timestamp), e );
                         p.fail( e );
                     }
 
@@ -351,7 +352,7 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.info( "Success: [" + method + "] " + url + " -> " + response.code() );
+                        logger.info( "Success: [{}] {} -> {} ({})", method, url, response.code(), timestamp );
                         p.complete( response );
                     }
                 } );
