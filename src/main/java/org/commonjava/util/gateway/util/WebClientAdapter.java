@@ -313,7 +313,8 @@ public class WebClientAdapter
 
                 Call call = callClient.newCall( requestBuilder.build() );
 
-                final String timestamp = System.currentTimeMillis() + "." + System.nanoTime(); // to identify the beginning/ending log message
+                final long nano = System.nanoTime();
+                final String timestamp = System.currentTimeMillis() + "." + nano; // to identify the beginning/ending log message
                 final HttpUrl url = call.request().url();
                 final String method = call.request().method();
                 logger.info( "Starting upstream request: [{}] {} ({})", method, url, timestamp );
@@ -336,7 +337,8 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.warn( String.format("Failed: [%s] %s (%s)", method, url, timestamp), e );
+                        logger.warn( String.format("Failed: [%s] %s (%s), latency: %s", method, url, timestamp,
+                                System.nanoTime() - nano), e );
                         p.fail( e );
                     }
 
@@ -352,7 +354,8 @@ public class WebClientAdapter
                         scope.close();
                         span.end();
 
-                        logger.info( "Success: [{}] {} -> {} ({})", method, url, response.code(), timestamp );
+                        logger.info( "Success: [{}] {} -> {} ({}), latency: {}", method, url, response.code(), timestamp,
+                                System.nanoTime() - nano );
                         p.complete( response );
                     }
                 } );
