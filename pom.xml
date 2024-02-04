@@ -25,14 +25,14 @@
   </parent>
   <groupId>org.commonjava.util</groupId>
   <artifactId>gateway</artifactId>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.2</version>
   <name>Gateway :: Project Root</name>
   <inceptionYear>2022</inceptionYear>
   <scm>
     <connection>scm:git:https://github.com/commonjava/gateway</connection>
     <developerConnection>scm:git:https://github.com/commonjava/gateway</developerConnection>
     <url>https://github.com/Commonjava/gateway</url>
-    <tag>HEAD</tag>
+    <tag>gateway-1.2</tag>
   </scm>
 
   <properties>
