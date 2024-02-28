@@ -41,7 +41,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static javax.ws.rs.core.HttpHeaders.HOST;
+import static jakarta.ws.rs.core.HttpHeaders.HOST;
 
 public class WebClientAdapter
 {

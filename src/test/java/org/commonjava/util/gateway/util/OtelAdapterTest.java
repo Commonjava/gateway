@@ -17,7 +17,6 @@ package org.commonjava.util.gateway.util;
 
 import io.opentelemetry.api.trace.Span;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,15 +25,11 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
 class OtelAdapterTest {
-    OtelAdapter otelAdapter;
-
-    @BeforeEach
-    void setUp() {
-        otelAdapter = new OtelAdapter();
-    }
 
     @Test
     void shouldReturnNoopSpanWhenDisabled() {
+        OtelAdapter otelAdapter = new OtelAdapter();
+
         //Given
         otelAdapter.enabled = false;
 
@@ -47,6 +42,8 @@ class OtelAdapterTest {
 
     @Test
     void shouldReturnPropagatableSpanWhenDisabled() {
+        OtelAdapter otelAdapter = new OtelAdapter();
+
         //Given
         otelAdapter.enabled = true;
 

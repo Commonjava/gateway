@@ -27,14 +27,14 @@ import org.commonjava.util.gateway.util.WebClientAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 import static io.vertx.core.http.HttpMethod.HEAD;
 import static io.vertx.core.http.impl.HttpUtils.normalizePath;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.commonjava.util.gateway.services.ProxyConstants.FORBIDDEN_HEADERS;
 
 @ApplicationScoped

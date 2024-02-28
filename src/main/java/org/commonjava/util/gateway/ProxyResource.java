@@ -17,20 +17,14 @@ package org.commonjava.util.gateway;
 
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
+import jakarta.ws.rs.*;
 import org.commonjava.util.gateway.services.ProxyService;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 import static org.commonjava.util.gateway.util.ServiceUtils.pathWithParams;
@@ -44,7 +38,7 @@ public class ProxyResource
     ProxyService proxyService;
 
     @HEAD
-    public Uni<Response> head( @PathParam( "path" ) String path, final @Context HttpServerRequest request )
+    public Uni<Response> head(@PathParam( "path" ) String path, final @Context HttpServerRequest request )
                     throws Exception
     {
         logger.debug( "Head resource: {}", path );

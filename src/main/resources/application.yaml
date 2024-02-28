@@ -6,16 +6,18 @@ quarkus:
         limits:
           max-body-size: 500M
 
-    opentelemetry:
+    otel:
         enabled: true
-        tracer:
+        traces:
             enabled: true
             # reflect sampling on collector
-            resource-attributes: sampler_ratio=0.05
+            #resource-attributes: sampler_ratio=0.05
             sampler:
-                ratio: 0.05
-            exporter:
-                otlp:
+                ~: traceidratio
+                arg: 0.05
+        exporter:
+            otlp:
+                traces:
                     # This is for sending to something like opentelemetry-collector
 #                    endpoint: http://localhost:4317
 

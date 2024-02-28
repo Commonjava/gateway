@@ -15,7 +15,7 @@
  */
 package org.commonjava.util.gateway.interceptor;
 
-import javax.interceptor.InterceptorBinding;
+import jakarta.interceptor.InterceptorBinding;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 

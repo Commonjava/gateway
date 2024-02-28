@@ -2,12 +2,16 @@
 quarkus:
     http:
         port: 8080
-        read-timeout: 30m
+        read-timeout: 15m
         limits:
-          max-body-size: 500M
-
-    package:
-        uber-jar: true
+          max-body-size: 1024M
+    otel:
+        enabled: true
+        traces:
+            enabled: true
+            sampler:
+                ~: traceidratio
+                arg: 1.0
 
     # Logging (disable console on prod)
     log:
