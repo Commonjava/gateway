@@ -15,8 +15,8 @@
  */
 package org.commonjava.util.gateway.metrics.health;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;

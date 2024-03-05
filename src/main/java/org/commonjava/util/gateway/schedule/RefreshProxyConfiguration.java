@@ -18,8 +18,8 @@ package org.commonjava.util.gateway.schedule;
 import io.quarkus.scheduler.Scheduled;
 import org.commonjava.util.gateway.config.ProxyConfiguration;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped

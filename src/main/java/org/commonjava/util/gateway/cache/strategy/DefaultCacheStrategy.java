@@ -20,7 +20,7 @@ import org.commonjava.util.gateway.config.CacheConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.inject.Alternative;
+import jakarta.enterprise.inject.Alternative;
 import java.io.File;
 import java.util.regex.Pattern;
 

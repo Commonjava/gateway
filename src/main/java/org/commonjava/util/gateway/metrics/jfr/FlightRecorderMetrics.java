@@ -19,8 +19,8 @@ import io.quarkus.runtime.StartupEvent;
 import jdk.jfr.FlightRecorder;
 import org.commonjava.util.gateway.metrics.jfr.events.JaxRSEvent;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 
 @ApplicationScoped
 public class FlightRecorderMetrics
