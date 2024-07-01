@@ -46,18 +46,16 @@ jobs:
 
     - name: maven-settings-xml-action
       uses: whelk-io/maven-settings-xml-action@v14
-      if: ${{ github.event.repository.fork == false }}
       with:
         repositories: '[{ "id": "sonatype", "url": "https://oss.sonatype.org/content/repositories/snapshots/", "releases": {"enabled": "false"}, "snapshots": {"enabled": "true" }}]'
-        servers: '[{ "id": "sonatype", "username": "${{ secrets.SONATYPE_BOT_USERNAME}}", "password": "${{ secrets.SONATYPE_BOT_TOKEN}}" }]'
 
     - name: "Maven Verify"
       if: ${{ github.event.repository.fork == true }}
       run: mvn -B -e verify
 
-    - name: "Maven Build & Deploy Snapshot to Sonatype OSSRH"
+    - name: "Maven Build"
       if: ${{ github.event.repository.fork == false }}
-      run: mvn -B -e deploy -DaltDeploymentRepository=sonatype::default::https://oss.sonatype.org/content/repositories/snapshots/
+      run: mvn -B -e clean install
 
     - name: Checkout tools repo
       uses: actions/checkout@v4
