@@ -384,6 +384,7 @@ public class WebClientAdapter
         {
             Request req = chain.request();
             Response resp = null;
+            IOException latestException = null;
             int tryCounter = 0;
             do {
                 if ( resp != null )
@@ -417,10 +418,7 @@ public class WebClientAdapter
                 }
                 catch( IOException e )
                 {
-                    if ( tryCounter >= count )
-                    {
-                        throw e;
-                    }
+                    latestException = e;
 
                     Span.current().setAttribute( "target.try." + tryCounter + ".error_message", e.getMessage() );
                     Span.current()
@@ -447,7 +445,9 @@ public class WebClientAdapter
 
             Span.current().setAttribute( "target.retries", tryCounter );
 
-            throw new IOException( "Proxy retry interceptor reached an unexpected fall-through condition!" );
+            throw new IOException( String.format(
+                "Proxy retry interceptor reached an unexpected fall-through condition! %s, Failed upstream request: %s",
+                latestException, req.url() ) );
         }
     }
 
