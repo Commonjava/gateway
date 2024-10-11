@@ -410,7 +410,7 @@ public class WebClientAdapter
                             Span.current()
                                 .setAttribute( "target.try." + tryCounter + ".status_code", resp.code() );
 
-                            logger.debug( "TRY({}/{}): Response missing or indicates server error: {}. Retrying",
+                            logger.warn( "TRY({}/{}): Response missing or indicates server error: {}. Retrying",
                                           tryCounter, count, resp );
                         }
                     }
@@ -426,7 +426,7 @@ public class WebClientAdapter
                     Span.current()
                         .setAttribute( "target.try." + tryCounter + ".error_class", e.getClass().getSimpleName() );
 
-                    logger.debug( "TRY(" + tryCounter + "/" + count + "): Failed upstream request: " + req.url(), e );
+                    logger.warn( "TRY(" + tryCounter + "/" + count + "): Failed upstream request: " + req.url(), e );
                 }
 
                 try
