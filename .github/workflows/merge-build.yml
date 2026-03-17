@@ -19,7 +19,10 @@
 
 name: Merge / Push Build
 
-on: [push]
+on:
+  push:
+    branches:
+      - 'master'
 
 jobs:
   publish-snapshot:
@@ -27,7 +30,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    permissions: 
+    permissions:
       contents: read
       packages: write
 
@@ -35,17 +38,17 @@ jobs:
       MAVEN_OPTS: "-Xmx4096m -Xms2048m -XX:MaxMetaspaceSize=4096m -Xss8m"
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         architecture: x64
-        java-version: 11
+        java-version: 17
 
     - name: maven-settings-xml-action
-      uses: whelk-io/maven-settings-xml-action@v14
+      uses: whelk-io/maven-settings-xml-action@v22
       with:
         repositories: '[{ "id": "sonatype", "url": "https://oss.sonatype.org/content/repositories/snapshots/", "releases": {"enabled": "false"}, "snapshots": {"enabled": "true" }}]'
 
@@ -58,7 +61,7 @@ jobs:
       run: mvn -B -e clean install
 
     - name: Checkout tools repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: Commonjava/commonjava-images
         path: commonjava-images

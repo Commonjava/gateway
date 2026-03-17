@@ -44,3 +44,7 @@ hs_err_pid*
 
 # cache is generated folder
 cache/
+
+# config is used for local testing
+config/
+
