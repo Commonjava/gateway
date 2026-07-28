@@ -73,7 +73,7 @@ jobs:
         cp "$tarball" "commonjava-images/gateway/gateway-runner.jar"
 
     - name: Log in to Quay.io
-      uses: redhat-actions/podman-login@v1
+      uses: redhat-actions/podman-login@v2
       with:
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
